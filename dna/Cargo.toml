@@ -1,0 +1,11 @@
+[package]
+name = "dna"
+version = "0.1.0"
+authors = ["K Rhoda <kelseydrhoda@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+once_cell = { path = "../../quartz/once_cell" }
+enum-display-derive = "0.1.0"
