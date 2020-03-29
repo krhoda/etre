@@ -2,8 +2,8 @@
 extern crate enum_display_derive;
 
 use once_cell::{OnceCell, OnceVal};
-use std::sync::Arc;
 use std::fmt::Display;
+use std::sync::Arc;
 
 // TODO: Support the other DNA alphabets.
 
@@ -21,7 +21,7 @@ pub fn from_char(c: char) -> Option<Nucleotide> {
         "T" => Some(Nucleotide::T),
         "C" => Some(Nucleotide::C),
         "G" => Some(Nucleotide::G),
-        _ => None
+        _ => None,
     }
 }
 
@@ -51,8 +51,8 @@ impl Cat {
 
         a.write(Nucleotide::A).unwrap();
         t.write(Nucleotide::T).unwrap();
-        g.write(Nucleotide::C).unwrap();
-        c.write(Nucleotide::G).unwrap();
+        g.write(Nucleotide::G).unwrap();
+        c.write(Nucleotide::C).unwrap();
 
         Cat(Arc::new(CatMachine {
             a: a,
@@ -83,16 +83,48 @@ impl Cat {
             Nucleotide::A => self.T(),
             Nucleotide::T => self.A(),
             Nucleotide::C => self.G(),
-            Nucleotide::G => self.C()
+            Nucleotide::G => self.C(),
         }
     }
 }
 
-
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn dna_cat_new() {
+        let cat = Cat::new();
+
+        assert_eq!(&Nucleotide::A, cat.A().read().as_ref().unwrap());
+        assert_eq!(&Nucleotide::T, cat.T().read().as_ref().unwrap());
+        assert_eq!(&Nucleotide::C, cat.C().read().as_ref().unwrap());
+        assert_eq!(&Nucleotide::G, cat.G().read().as_ref().unwrap());
+    }
+
+    #[test]
+    fn dna_complement() {
+        let cat = Cat::new();
+        let a = cat.A();
+        let t = cat.T();
+        let c = cat.C();
+        let g = cat.G();
+
+        assert_eq!(
+            a.read().as_ref().unwrap(),
+            cat.compliment(t.clone()).read().as_ref().unwrap()
+        );
+        assert_eq!(
+            t.read().as_ref().unwrap(),
+            cat.compliment(a.clone()).read().as_ref().unwrap()
+        );
+        assert_eq!(
+            c.read().as_ref().unwrap(),
+            cat.compliment(g.clone()).read().as_ref().unwrap()
+        );
+        assert_eq!(
+            g.read().as_ref().unwrap(),
+            cat.compliment(c.clone()).read().as_ref().unwrap()
+        );
     }
 }
