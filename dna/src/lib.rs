@@ -15,6 +15,16 @@ pub enum Nucleotide {
     C,
 }
 
+pub fn from_char(c: char) -> Option<Nucleotide> {
+    match c.to_uppercase().to_string().as_ref() {
+        "A" => Some(Nucleotide::A),
+        "T" => Some(Nucleotide::T),
+        "C" => Some(Nucleotide::C),
+        "G" => Some(Nucleotide::G),
+        _ => None
+    }
+}
+
 pub type Nucl = OnceVal<Nucleotide>;
 
 #[derive(Debug)]
