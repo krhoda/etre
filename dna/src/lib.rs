@@ -127,4 +127,21 @@ mod tests {
             cat.compliment(c.clone()).read().as_ref().unwrap()
         );
     }
+
+    #[test]
+    fn dna_from_char() {
+        assert_eq!(from_char("A".chars().next().unwrap()), Some(Nucleotide::A));
+        assert_eq!(from_char("a".chars().next().unwrap()), Some(Nucleotide::A));
+
+        assert_eq!(from_char("T".chars().next().unwrap()), Some(Nucleotide::T));
+        assert_eq!(from_char("t".chars().next().unwrap()), Some(Nucleotide::T));
+
+        assert_eq!(from_char("C".chars().next().unwrap()), Some(Nucleotide::C));
+        assert_eq!(from_char("c".chars().next().unwrap()), Some(Nucleotide::C));
+
+        assert_eq!(from_char("G".chars().next().unwrap()), Some(Nucleotide::G));
+        assert_eq!(from_char("g".chars().next().unwrap()), Some(Nucleotide::G));
+
+        assert_eq!(from_char("d".chars().next().unwrap()), None);
+    }
 }

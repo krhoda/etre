@@ -106,8 +106,61 @@ impl Helix {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+    fn helix_new() {
+        let cat = Cat::new();
+        let mut h = Helix::new(cat.clone());
+        let mut tvec = Vec::<Nucl>::new();
+        assert_eq!(&tvec, &h.val);
+        h.push(Nucleotide::A);
+        tvec.push(cat.A());
+
+        assert_eq!(&tvec, &h.val);
+
+        h.push(Nucleotide::T);
+        tvec.push(cat.T());
+
+        assert_eq!(&tvec, &h.val);
+
+        h.push(Nucleotide::C);
+        tvec.push(cat.C());
+
+        assert_eq!(&tvec, &h.val);
+
+        h.push(Nucleotide::G);
+        tvec.push(cat.G());
+
+        assert_eq!(&tvec, &h.val);
+    }
+
+    fn helix_from_string() {
+        let cat = Cat::new();
+
+        let hxstr = String::from("gattaca");
+        let badstr = String::from("a123g");
+
+        let mut controlH = Helix::new(cat.clone());
+
+        controlH.push(Nucleotide::G);
+        controlH.push(Nucleotide::A);
+        controlH.push(Nucleotide::T);
+        controlH.push(Nucleotide::T);
+        controlH.push(Nucleotide::A);
+        controlH.push(Nucleotide::C);
+        controlH.push(Nucleotide::A);
+
+        let maybeNone = Helix::from_string(badstr, cat.clone());
+        match maybeNone {
+            None => println!(""),
+            Some(x) => panic!("Should've recieved nothing, got: {:?}", x)
+        }
+
+        let maybeH = Helix::from_string(hxstr, cat.clone());
+        match maybeH {
+            None => panic!("Failed in Helix from_string with good string"),
+            Some(h) => assert_eq!(h.val, controlH.val),
+        }
     }
 }
