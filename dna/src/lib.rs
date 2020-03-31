@@ -2,6 +2,11 @@
 extern crate enum_display_derive;
 
 use once_cell::{OnceCell, OnceVal};
+
+use category::Cat;
+use monomer::Monomer;
+use polymer::Polymer;
+
 use std::fmt::Display;
 use std::sync::Arc;
 
@@ -15,20 +20,22 @@ pub enum Nucleotide {
     C,
 }
 
-pub fn from_char(c: char) -> Option<Nucleotide> {
-    match c.to_uppercase().to_string().as_ref() {
-        "A" => Some(Nucleotide::A),
-        "T" => Some(Nucleotide::T),
-        "C" => Some(Nucleotide::C),
-        "G" => Some(Nucleotide::G),
-        _ => None,
+impl Monomer for Nucleotide {
+    fn from_char(c: char) -> Option<Nucleotide> {
+        match c.to_uppercase().to_string().as_ref() {
+            "A" => Some(Nucleotide::A),
+            "T" => Some(Nucleotide::T),
+            "C" => Some(Nucleotide::C),
+            "G" => Some(Nucleotide::G),
+            _ => None,
+        }
     }
 }
 
 pub type Nucl = OnceVal<Nucleotide>;
 
 #[derive(Debug)]
-struct CatMachine {
+struct CategoryDNAMachine {
     a: OnceCell<Nucleotide>,
     t: OnceCell<Nucleotide>,
     g: OnceCell<Nucleotide>,
@@ -40,28 +47,9 @@ struct CatMachine {
 // For this reason, it has it's name which will likely change
 // As it's structure becomes clearer.
 #[derive(Clone, Debug)]
-pub struct Cat(Arc<CatMachine>);
+pub struct CategoryDNA(Arc<CategoryDNAMachine>);
 
-impl Cat {
-    pub fn new() -> Cat {
-        let mut a = OnceCell::<Nucleotide>::new();
-        let mut t = OnceCell::<Nucleotide>::new();
-        let mut g = OnceCell::<Nucleotide>::new();
-        let mut c = OnceCell::<Nucleotide>::new();
-
-        a.write(Nucleotide::A).unwrap();
-        t.write(Nucleotide::T).unwrap();
-        g.write(Nucleotide::G).unwrap();
-        c.write(Nucleotide::C).unwrap();
-
-        Cat(Arc::new(CatMachine {
-            a: a,
-            t: t,
-            g: g,
-            c: c,
-        }))
-    }
-
+impl CategoryDNA {
     pub fn A(&self) -> Nucl {
         self.0.a.read().unwrap()
     }
@@ -88,13 +76,43 @@ impl Cat {
     }
 }
 
+impl Cat<Nucleotide, Helix> for CategoryDNA {
+    fn new() -> CategoryDNA {
+        let mut a = OnceCell::<Nucleotide>::new();
+        let mut t = OnceCell::<Nucleotide>::new();
+        let mut g = OnceCell::<Nucleotide>::new();
+        let mut c = OnceCell::<Nucleotide>::new();
+
+        a.write(Nucleotide::A).unwrap();
+        t.write(Nucleotide::T).unwrap();
+        g.write(Nucleotide::G).unwrap();
+        c.write(Nucleotide::C).unwrap();
+
+        CategoryDNA(Arc::new(CategoryDNAMachine {
+            a: a,
+            t: t,
+            g: g,
+            c: c,
+        }))
+    }
+
+    fn read(&self, n: Nucleotide) -> Nucl {
+        match n {
+            Nucleotide::A => self.A(),
+            Nucleotide::T => self.T(),
+            Nucleotide::C => self.C(),
+            Nucleotide::G => self.G(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn dna_cat_new() {
-        let cat = Cat::new();
+        let cat = CategoryDNA::new();
 
         assert_eq!(&Nucleotide::A, cat.A().read().as_ref().unwrap());
         assert_eq!(&Nucleotide::T, cat.T().read().as_ref().unwrap());
@@ -104,7 +122,7 @@ mod tests {
 
     #[test]
     fn dna_complement() {
-        let cat = Cat::new();
+        let cat = CategoryDNA::new();
         let a = cat.A();
         let t = cat.T();
         let c = cat.C();
@@ -130,18 +148,42 @@ mod tests {
 
     #[test]
     fn dna_from_char() {
-        assert_eq!(from_char("A".chars().next().unwrap()), Some(Nucleotide::A));
-        assert_eq!(from_char("a".chars().next().unwrap()), Some(Nucleotide::A));
+        assert_eq!(
+            Nucleotide::from_char("A".chars().next().unwrap()),
+            Some(Nucleotide::A)
+        );
+        assert_eq!(
+            Nucleotide::from_char("a".chars().next().unwrap()),
+            Some(Nucleotide::A)
+        );
 
-        assert_eq!(from_char("T".chars().next().unwrap()), Some(Nucleotide::T));
-        assert_eq!(from_char("t".chars().next().unwrap()), Some(Nucleotide::T));
+        assert_eq!(
+            Nucleotide::from_char("T".chars().next().unwrap()),
+            Some(Nucleotide::T)
+        );
+        assert_eq!(
+            Nucleotide::from_char("t".chars().next().unwrap()),
+            Some(Nucleotide::T)
+        );
 
-        assert_eq!(from_char("C".chars().next().unwrap()), Some(Nucleotide::C));
-        assert_eq!(from_char("c".chars().next().unwrap()), Some(Nucleotide::C));
+        assert_eq!(
+            Nucleotide::from_char("C".chars().next().unwrap()),
+            Some(Nucleotide::C)
+        );
+        assert_eq!(
+            Nucleotide::from_char("c".chars().next().unwrap()),
+            Some(Nucleotide::C)
+        );
 
-        assert_eq!(from_char("G".chars().next().unwrap()), Some(Nucleotide::G));
-        assert_eq!(from_char("g".chars().next().unwrap()), Some(Nucleotide::G));
+        assert_eq!(
+            Nucleotide::from_char("G".chars().next().unwrap()),
+            Some(Nucleotide::G)
+        );
+        assert_eq!(
+            Nucleotide::from_char("g".chars().next().unwrap()),
+            Some(Nucleotide::G)
+        );
 
-        assert_eq!(from_char("d".chars().next().unwrap()), None);
+        assert_eq!(Nucleotide::from_char("d".chars().next().unwrap()), None);
     }
 }

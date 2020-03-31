@@ -1,6 +1,9 @@
 [workspace]
 
 members = [
+	"monomer",
+	"polymer",
+	"category",
 	"dna",
 	"helix",
 	# "rna",

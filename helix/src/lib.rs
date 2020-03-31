@@ -1,4 +1,7 @@
+/*
 use dna::{Cat, Nucl, Nucleotide};
+use monomer::{Monomer};
+use once_cell::OnceVal;
 
 type Strand = Vec<Nucl>;
 
@@ -11,6 +14,7 @@ pub struct Helix {
 impl Helix {
     pub fn new(c: Cat) -> Helix {
         Helix {
+            // THIS IS ALL I NEED:
             val: Vec::<Nucl>::new(),
             src: c,
         }
@@ -36,7 +40,7 @@ impl Helix {
         let mut h = Helix::new(cat);
         let mut ok = true;
         for c in s.chars() {
-            match dna::from_char(c) {
+            match Nucleotide::from_char(c) {
                 Some(x) => h.push(x),
                 None => {
                     ok = false;
@@ -135,32 +139,35 @@ mod tests {
         assert_eq!(&tvec, &h.val);
     }
 
+    #[test]
     fn helix_from_string() {
         let cat = Cat::new();
 
         let hxstr = String::from("gattaca");
         let badstr = String::from("a123g");
 
-        let mut controlH = Helix::new(cat.clone());
+        let mut control_h = Helix::new(cat.clone());
 
-        controlH.push(Nucleotide::G);
-        controlH.push(Nucleotide::A);
-        controlH.push(Nucleotide::T);
-        controlH.push(Nucleotide::T);
-        controlH.push(Nucleotide::A);
-        controlH.push(Nucleotide::C);
-        controlH.push(Nucleotide::A);
+        control_h.push(Nucleotide::G);
+        control_h.push(Nucleotide::A);
+        control_h.push(Nucleotide::T);
+        control_h.push(Nucleotide::T);
+        control_h.push(Nucleotide::A);
+        control_h.push(Nucleotide::C);
+        control_h.push(Nucleotide::A);
 
-        let maybeNone = Helix::from_string(badstr, cat.clone());
-        match maybeNone {
-            None => println!(""),
+        let maybe_none = Helix::from_string(badstr, cat.clone());
+        match maybe_none {
+            None => assert!(true),
             Some(x) => panic!("Should've recieved nothing, got: {:?}", x)
         }
 
-        let maybeH = Helix::from_string(hxstr, cat.clone());
-        match maybeH {
+        let maybe_h = Helix::from_string(hxstr, cat.clone());
+        match maybe_h {
             None => panic!("Failed in Helix from_string with good string"),
-            Some(h) => assert_eq!(h.val, controlH.val),
+            Some(h) => assert_eq!(h.val, control_h.val),
         }
     }
 }
+
+*/
