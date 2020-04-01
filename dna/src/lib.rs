@@ -35,11 +35,28 @@ impl Monomer for Nucleotide {
 pub type Nucl = OnceVal<Nucleotide>;
 
 #[derive(Debug)]
+pub struct Helix(Vec<Nucl>);
+
+impl Polymer<Nucleotide> for Helix {
+    fn new() -> Self {
+        Helix(Vec::<Nucl>::new())
+    }
+
+    fn push(&mut self, n: Nucl) {
+        self.0.push(n);
+    }
+
+    fn concat(&mut self, other: &mut Self) {
+        self.0.append(&mut other.0);
+    }
+}
+
+#[derive(Debug)]
 struct CategoryDNAMachine {
-    a: OnceCell<Nucleotide>,
-    t: OnceCell<Nucleotide>,
-    g: OnceCell<Nucleotide>,
-    c: OnceCell<Nucleotide>,
+    a: OnceVal<Nucleotide>,
+    t: OnceVal<Nucleotide>,
+    g: OnceVal<Nucleotide>,
+    c: OnceVal<Nucleotide>,
 }
 
 // The below is a memory/speed(?) optimization I'm testing.
@@ -50,43 +67,74 @@ struct CategoryDNAMachine {
 pub struct CategoryDNA(Arc<CategoryDNAMachine>);
 
 impl CategoryDNA {
-    pub fn A(&self) -> Nucl {
-        self.0.a.read().unwrap()
-    }
-
-    pub fn T(&self) -> Nucl {
-        self.0.t.read().unwrap()
-    }
-
-    pub fn C(&self) -> Nucl {
-        self.0.c.read().unwrap()
-    }
-
-    pub fn G(&self) -> Nucl {
-        self.0.g.read().unwrap()
-    }
-
-    pub fn compliment(&self, n: Nucl) -> Nucl {
+    pub fn compliment(&self, n: &Nucl) -> Nucl {
         match n.read().as_ref().unwrap() {
-            Nucleotide::A => self.T(),
-            Nucleotide::T => self.A(),
-            Nucleotide::C => self.G(),
-            Nucleotide::G => self.C(),
+            Nucleotide::A => self.0.t.clone(),
+            Nucleotide::T => self.0.a.clone(),
+            Nucleotide::C => self.0.g.clone(),
+            Nucleotide::G => self.0.c.clone(),
+        }
+    }
+
+    pub fn inverse(&self, h: &Helix) -> Helix {
+        let mut next = Helix::new();
+
+        for x in &h.0 {
+            next.push(self.compliment(&x.clone()))
+        }
+
+        next.0 = next.0.into_iter().rev().collect();
+        next
+    }
+
+    pub fn pairs(&self, h: &Helix) -> Vec<(Nucl, Nucl)> {
+        let mut next = Vec::<(Nucl, Nucl)>::new();
+        for x in &h.0 {
+            next.push((x.clone(), self.compliment(&x.clone())));
+        }
+
+        next
+    }
+
+    // TODO: Better result than tuple fraction.
+    pub fn gc_content(&self, h: &Helix) -> (u64, u64) {
+        let mut n: u64 = 0;
+        let mut d: u64 = 0;
+        for x in &h.0 {
+            d = d + 1;
+            if CategoryDNA::is_g_or_c(x.read().as_ref().unwrap()) {
+                n = n + 1;
+            }
+        }
+
+        (n, d)
+    }
+
+    fn is_g_or_c(n: &Nucleotide) -> bool {
+        match n {
+            Nucleotide::G => true,
+            Nucleotide::C => true,
+            _ => false,
         }
     }
 }
 
 impl Cat<Nucleotide, Helix> for CategoryDNA {
     fn new() -> CategoryDNA {
-        let mut a = OnceCell::<Nucleotide>::new();
-        let mut t = OnceCell::<Nucleotide>::new();
-        let mut g = OnceCell::<Nucleotide>::new();
-        let mut c = OnceCell::<Nucleotide>::new();
+        let mut ac = OnceCell::<Nucleotide>::new();
+        let mut tc = OnceCell::<Nucleotide>::new();
+        let mut gc = OnceCell::<Nucleotide>::new();
+        let mut cc = OnceCell::<Nucleotide>::new();
 
-        a.write(Nucleotide::A).unwrap();
-        t.write(Nucleotide::T).unwrap();
-        g.write(Nucleotide::G).unwrap();
-        c.write(Nucleotide::C).unwrap();
+        ac.write(Nucleotide::A).unwrap();
+        tc.write(Nucleotide::T).unwrap();
+        gc.write(Nucleotide::G).unwrap();
+        cc.write(Nucleotide::C).unwrap();
+
+        let a = ac.read().unwrap();
+        let t = tc.read().unwrap();
+        let g = gc.read().unwrap();
+        let c = cc.read().unwrap();
 
         CategoryDNA(Arc::new(CategoryDNAMachine {
             a: a,
@@ -98,10 +146,10 @@ impl Cat<Nucleotide, Helix> for CategoryDNA {
 
     fn read(&self, n: Nucleotide) -> Nucl {
         match n {
-            Nucleotide::A => self.A(),
-            Nucleotide::T => self.T(),
-            Nucleotide::C => self.C(),
-            Nucleotide::G => self.G(),
+            Nucleotide::A => self.0.a.clone(),
+            Nucleotide::T => self.0.t.clone(),
+            Nucleotide::C => self.0.c.clone(),
+            Nucleotide::G => self.0.g.clone(),
         }
     }
 }
@@ -110,39 +158,37 @@ impl Cat<Nucleotide, Helix> for CategoryDNA {
 mod tests {
     use super::*;
 
+    // TODO: ADD READ TEST.
+
     #[test]
     fn dna_cat_new() {
         let cat = CategoryDNA::new();
 
-        assert_eq!(&Nucleotide::A, cat.A().read().as_ref().unwrap());
-        assert_eq!(&Nucleotide::T, cat.T().read().as_ref().unwrap());
-        assert_eq!(&Nucleotide::C, cat.C().read().as_ref().unwrap());
-        assert_eq!(&Nucleotide::G, cat.G().read().as_ref().unwrap());
+        assert_eq!(&Nucleotide::A, cat.0.a.read().as_ref().unwrap());
+        assert_eq!(&Nucleotide::T, cat.0.t.read().as_ref().unwrap());
+        assert_eq!(&Nucleotide::C, cat.0.c.read().as_ref().unwrap());
+        assert_eq!(&Nucleotide::G, cat.0.g.read().as_ref().unwrap());
     }
 
     #[test]
     fn dna_complement() {
         let cat = CategoryDNA::new();
-        let a = cat.A();
-        let t = cat.T();
-        let c = cat.C();
-        let g = cat.G();
 
         assert_eq!(
-            a.read().as_ref().unwrap(),
-            cat.compliment(t.clone()).read().as_ref().unwrap()
+            cat.0.a.read().as_ref().unwrap(),
+            cat.compliment(&cat.0.t.clone()).read().as_ref().unwrap()
         );
         assert_eq!(
-            t.read().as_ref().unwrap(),
-            cat.compliment(a.clone()).read().as_ref().unwrap()
+            cat.0.t.read().as_ref().unwrap(),
+            cat.compliment(&cat.0.a.clone()).read().as_ref().unwrap()
         );
         assert_eq!(
-            c.read().as_ref().unwrap(),
-            cat.compliment(g.clone()).read().as_ref().unwrap()
+            cat.0.c.read().as_ref().unwrap(),
+            cat.compliment(&cat.0.g.clone()).read().as_ref().unwrap()
         );
         assert_eq!(
-            g.read().as_ref().unwrap(),
-            cat.compliment(c.clone()).read().as_ref().unwrap()
+            cat.0.g.read().as_ref().unwrap(),
+            cat.compliment(&cat.0.c.clone()).read().as_ref().unwrap()
         );
     }
 
@@ -185,5 +231,62 @@ mod tests {
         );
 
         assert_eq!(Nucleotide::from_char("d".chars().next().unwrap()), None);
+    }
+
+    #[test]
+    fn helix_new() {
+        let cat = CategoryDNA::new();
+        let mut h = Helix::new();
+        let mut tvec = Vec::<Nucl>::new();
+        assert_eq!(&tvec, &h.0);
+        h.push(cat.read(Nucleotide::A));
+        tvec.push(cat.0.a.clone());
+
+        assert_eq!(&tvec, &h.0);
+
+        h.push(cat.read(Nucleotide::T));
+        tvec.push(cat.0.t.clone());
+
+        assert_eq!(&tvec, &h.0);
+
+        h.push(cat.read(Nucleotide::C));
+        tvec.push(cat.0.c.clone());
+
+        assert_eq!(&tvec, &h.0);
+
+        h.push(cat.read(Nucleotide::G));
+        tvec.push(cat.0.g.clone());
+
+        assert_eq!(&tvec, &h.0);
+    }
+
+    #[test]
+    fn helix_from_string() {
+        let cat = CategoryDNA::new();
+
+        let hxstr = String::from("gattaca");
+        let badstr = String::from("a123g");
+
+        let mut control_h = Helix::new();
+
+        control_h.push(cat.read(Nucleotide::G));
+        control_h.push(cat.read(Nucleotide::A));
+        control_h.push(cat.read(Nucleotide::T));
+        control_h.push(cat.read(Nucleotide::T));
+        control_h.push(cat.read(Nucleotide::A));
+        control_h.push(cat.read(Nucleotide::C));
+        control_h.push(cat.read(Nucleotide::A));
+
+        let maybe_none = cat.from_string(badstr);
+        match maybe_none {
+            None => assert!(true),
+            Some(x) => panic!("Should've recieved nothing, got: {:?}", x),
+        }
+
+        let maybe_h = cat.from_string(hxstr);
+        match maybe_h {
+            None => panic!("Failed in Helix from_string with good string"),
+            Some(h) => assert_eq!(h.0, control_h.0),
+        }
     }
 }
