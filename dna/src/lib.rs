@@ -96,6 +96,11 @@ impl CategoryDNA {
         next
     }
 
+    pub fn strands(&self, h: Helix) -> (Helix, Helix) {
+        let x = self.inverse(&h);
+        (h, x)
+    }
+
     // TODO: Better result than tuple fraction.
     pub fn gc_content(&self, h: &Helix) -> (u64, u64) {
         let mut n: u64 = 0;
@@ -288,5 +293,40 @@ mod tests {
             None => panic!("Failed in Helix from_string with good string"),
             Some(h) => assert_eq!(h.0, control_h.0),
         }
+    }
+
+    #[test]
+    fn test_inverse_and_strands() {
+        let cat = CategoryDNA::new();
+
+        let hxstr = String::from("gattaca");
+        let invhxstr = String::from("tgtaatc");
+        let h = cat.from_string(hxstr).unwrap();
+        let h2 = cat.from_string(invhxstr).unwrap();
+        assert_eq!(cat.inverse(&h).0, h2.0);
+        assert_eq!(cat.inverse(&cat.inverse(&h)).0, h.0);
+
+        let (fst, snd) = cat.strands(h);
+        assert_eq!(fst.0, cat.inverse(&h2).0);
+        assert_eq!(snd.0, h2.0);
+    }
+
+    #[test]
+    fn test_gc_content() {
+        let cat = CategoryDNA::new();
+
+        let hxstr = String::from("gattaca");
+        let nogc = String::from("ttaatt");
+
+        let h = cat.from_string(hxstr).unwrap();
+        let h2 = cat.from_string(nogc).unwrap();
+        let (should_be_2, should_be_7) = cat.gc_content(&h);
+        let (should_be_0, should_be_6) = cat.gc_content(&h2);
+        println!("{}, {}, {}, {}", should_be_0, should_be_2, should_be_6, should_be_7);
+
+        assert_eq!(should_be_0, 0);
+        assert_eq!(should_be_2, 2);
+        assert_eq!(should_be_6, 6);
+        assert_eq!(should_be_7, 7);
     }
 }
