@@ -13,36 +13,36 @@ use std::sync::Arc;
 // TODO: Support the other DNA alphabets.
 
 #[derive(Debug, Display, PartialEq)]
-pub enum Nucleotide {
+pub enum DNucleotide {
     A,
     T,
     G,
     C,
 }
 
-impl Monomer for Nucleotide {
-    fn from_char(c: char) -> Option<Nucleotide> {
+impl Monomer for DNucleotide {
+    fn from_char(c: char) -> Option<DNucleotide> {
         match c.to_uppercase().to_string().as_ref() {
-            "A" => Some(Nucleotide::A),
-            "T" => Some(Nucleotide::T),
-            "C" => Some(Nucleotide::C),
-            "G" => Some(Nucleotide::G),
+            "A" => Some(DNucleotide::A),
+            "T" => Some(DNucleotide::T),
+            "C" => Some(DNucleotide::C),
+            "G" => Some(DNucleotide::G),
             _ => None,
         }
     }
 }
 
-pub type Nucl = OnceVal<Nucleotide>;
+pub type DNucl = OnceVal<DNucleotide>;
 
 #[derive(Debug)]
-pub struct Helix(Vec<Nucl>);
+pub struct Helix(Vec<DNucl>);
 
-impl Polymer<Nucleotide> for Helix {
+impl Polymer<DNucleotide> for Helix {
     fn new() -> Self {
-        Helix(Vec::<Nucl>::new())
+        Helix(Vec::<DNucl>::new())
     }
 
-    fn push(&mut self, n: Nucl) {
+    fn push(&mut self, n: DNucl) {
         self.0.push(n);
     }
 
@@ -53,10 +53,10 @@ impl Polymer<Nucleotide> for Helix {
 
 #[derive(Debug)]
 struct CategoryDNAMachine {
-    a: OnceVal<Nucleotide>,
-    t: OnceVal<Nucleotide>,
-    g: OnceVal<Nucleotide>,
-    c: OnceVal<Nucleotide>,
+    a: OnceVal<DNucleotide>,
+    t: OnceVal<DNucleotide>,
+    g: OnceVal<DNucleotide>,
+    c: OnceVal<DNucleotide>,
 }
 
 // The below is a memory/speed(?) optimization I'm testing.
@@ -67,12 +67,12 @@ struct CategoryDNAMachine {
 pub struct CategoryDNA(Arc<CategoryDNAMachine>);
 
 impl CategoryDNA {
-    pub fn compliment(&self, n: &Nucl) -> Nucl {
+    pub fn compliment(&self, n: &DNucl) -> DNucl {
         match n.read().as_ref().unwrap() {
-            Nucleotide::A => self.0.t.clone(),
-            Nucleotide::T => self.0.a.clone(),
-            Nucleotide::C => self.0.g.clone(),
-            Nucleotide::G => self.0.c.clone(),
+            DNucleotide::A => self.0.t.clone(),
+            DNucleotide::T => self.0.a.clone(),
+            DNucleotide::C => self.0.g.clone(),
+            DNucleotide::G => self.0.c.clone(),
         }
     }
 
@@ -87,8 +87,8 @@ impl CategoryDNA {
         next
     }
 
-    pub fn pairs(&self, h: &Helix) -> Vec<(Nucl, Nucl)> {
-        let mut next = Vec::<(Nucl, Nucl)>::new();
+    pub fn pairs(&self, h: &Helix) -> Vec<(DNucl, DNucl)> {
+        let mut next = Vec::<(DNucl, DNucl)>::new();
         for x in &h.0 {
             next.push((x.clone(), self.compliment(&x.clone())));
         }
@@ -115,26 +115,26 @@ impl CategoryDNA {
         (n, d)
     }
 
-    fn is_g_or_c(n: &Nucleotide) -> bool {
+    fn is_g_or_c(n: &DNucleotide) -> bool {
         match n {
-            Nucleotide::G => true,
-            Nucleotide::C => true,
+            DNucleotide::G => true,
+            DNucleotide::C => true,
             _ => false,
         }
     }
 }
 
-impl Cat<Nucleotide, Helix> for CategoryDNA {
+impl Cat<DNucleotide, Helix> for CategoryDNA {
     fn new() -> CategoryDNA {
-        let mut ac = OnceCell::<Nucleotide>::new();
-        let mut tc = OnceCell::<Nucleotide>::new();
-        let mut gc = OnceCell::<Nucleotide>::new();
-        let mut cc = OnceCell::<Nucleotide>::new();
+        let mut ac = OnceCell::<DNucleotide>::new();
+        let mut tc = OnceCell::<DNucleotide>::new();
+        let mut gc = OnceCell::<DNucleotide>::new();
+        let mut cc = OnceCell::<DNucleotide>::new();
 
-        ac.write(Nucleotide::A).unwrap();
-        tc.write(Nucleotide::T).unwrap();
-        gc.write(Nucleotide::G).unwrap();
-        cc.write(Nucleotide::C).unwrap();
+        ac.write(DNucleotide::A).unwrap();
+        tc.write(DNucleotide::T).unwrap();
+        gc.write(DNucleotide::G).unwrap();
+        cc.write(DNucleotide::C).unwrap();
 
         let a = ac.read().unwrap();
         let t = tc.read().unwrap();
@@ -149,12 +149,12 @@ impl Cat<Nucleotide, Helix> for CategoryDNA {
         }))
     }
 
-    fn read(&self, n: Nucleotide) -> Nucl {
+    fn read(&self, n: DNucleotide) -> DNucl {
         match n {
-            Nucleotide::A => self.0.a.clone(),
-            Nucleotide::T => self.0.t.clone(),
-            Nucleotide::C => self.0.c.clone(),
-            Nucleotide::G => self.0.g.clone(),
+            DNucleotide::A => self.0.a.clone(),
+            DNucleotide::T => self.0.t.clone(),
+            DNucleotide::C => self.0.c.clone(),
+            DNucleotide::G => self.0.g.clone(),
         }
     }
 }
@@ -169,10 +169,10 @@ mod tests {
     fn dna_cat_new() {
         let cat = CategoryDNA::new();
 
-        assert_eq!(&Nucleotide::A, cat.0.a.read().as_ref().unwrap());
-        assert_eq!(&Nucleotide::T, cat.0.t.read().as_ref().unwrap());
-        assert_eq!(&Nucleotide::C, cat.0.c.read().as_ref().unwrap());
-        assert_eq!(&Nucleotide::G, cat.0.g.read().as_ref().unwrap());
+        assert_eq!(&DNucleotide::A, cat.0.a.read().as_ref().unwrap());
+        assert_eq!(&DNucleotide::T, cat.0.t.read().as_ref().unwrap());
+        assert_eq!(&DNucleotide::C, cat.0.c.read().as_ref().unwrap());
+        assert_eq!(&DNucleotide::G, cat.0.g.read().as_ref().unwrap());
     }
 
     #[test]
@@ -200,66 +200,66 @@ mod tests {
     #[test]
     fn dna_from_char() {
         assert_eq!(
-            Nucleotide::from_char("A".chars().next().unwrap()),
-            Some(Nucleotide::A)
+            DNucleotide::from_char("A".chars().next().unwrap()),
+            Some(DNucleotide::A)
         );
         assert_eq!(
-            Nucleotide::from_char("a".chars().next().unwrap()),
-            Some(Nucleotide::A)
+            DNucleotide::from_char("a".chars().next().unwrap()),
+            Some(DNucleotide::A)
         );
 
         assert_eq!(
-            Nucleotide::from_char("T".chars().next().unwrap()),
-            Some(Nucleotide::T)
+            DNucleotide::from_char("T".chars().next().unwrap()),
+            Some(DNucleotide::T)
         );
         assert_eq!(
-            Nucleotide::from_char("t".chars().next().unwrap()),
-            Some(Nucleotide::T)
+            DNucleotide::from_char("t".chars().next().unwrap()),
+            Some(DNucleotide::T)
         );
 
         assert_eq!(
-            Nucleotide::from_char("C".chars().next().unwrap()),
-            Some(Nucleotide::C)
+            DNucleotide::from_char("C".chars().next().unwrap()),
+            Some(DNucleotide::C)
         );
         assert_eq!(
-            Nucleotide::from_char("c".chars().next().unwrap()),
-            Some(Nucleotide::C)
+            DNucleotide::from_char("c".chars().next().unwrap()),
+            Some(DNucleotide::C)
         );
 
         assert_eq!(
-            Nucleotide::from_char("G".chars().next().unwrap()),
-            Some(Nucleotide::G)
+            DNucleotide::from_char("G".chars().next().unwrap()),
+            Some(DNucleotide::G)
         );
         assert_eq!(
-            Nucleotide::from_char("g".chars().next().unwrap()),
-            Some(Nucleotide::G)
+            DNucleotide::from_char("g".chars().next().unwrap()),
+            Some(DNucleotide::G)
         );
 
-        assert_eq!(Nucleotide::from_char("d".chars().next().unwrap()), None);
+        assert_eq!(DNucleotide::from_char("d".chars().next().unwrap()), None);
     }
 
     #[test]
     fn helix_new() {
         let cat = CategoryDNA::new();
         let mut h = Helix::new();
-        let mut tvec = Vec::<Nucl>::new();
+        let mut tvec = Vec::<DNucl>::new();
         assert_eq!(&tvec, &h.0);
-        h.push(cat.read(Nucleotide::A));
+        h.push(cat.read(DNucleotide::A));
         tvec.push(cat.0.a.clone());
 
         assert_eq!(&tvec, &h.0);
 
-        h.push(cat.read(Nucleotide::T));
+        h.push(cat.read(DNucleotide::T));
         tvec.push(cat.0.t.clone());
 
         assert_eq!(&tvec, &h.0);
 
-        h.push(cat.read(Nucleotide::C));
+        h.push(cat.read(DNucleotide::C));
         tvec.push(cat.0.c.clone());
 
         assert_eq!(&tvec, &h.0);
 
-        h.push(cat.read(Nucleotide::G));
+        h.push(cat.read(DNucleotide::G));
         tvec.push(cat.0.g.clone());
 
         assert_eq!(&tvec, &h.0);
@@ -274,13 +274,13 @@ mod tests {
 
         let mut control_h = Helix::new();
 
-        control_h.push(cat.read(Nucleotide::G));
-        control_h.push(cat.read(Nucleotide::A));
-        control_h.push(cat.read(Nucleotide::T));
-        control_h.push(cat.read(Nucleotide::T));
-        control_h.push(cat.read(Nucleotide::A));
-        control_h.push(cat.read(Nucleotide::C));
-        control_h.push(cat.read(Nucleotide::A));
+        control_h.push(cat.read(DNucleotide::G));
+        control_h.push(cat.read(DNucleotide::A));
+        control_h.push(cat.read(DNucleotide::T));
+        control_h.push(cat.read(DNucleotide::T));
+        control_h.push(cat.read(DNucleotide::A));
+        control_h.push(cat.read(DNucleotide::C));
+        control_h.push(cat.read(DNucleotide::A));
 
         let maybe_none = cat.from_string(badstr);
         match maybe_none {
@@ -322,7 +322,6 @@ mod tests {
         let h2 = cat.from_string(nogc).unwrap();
         let (should_be_2, should_be_7) = cat.gc_content(&h);
         let (should_be_0, should_be_6) = cat.gc_content(&h2);
-        println!("{}, {}, {}, {}", should_be_0, should_be_2, should_be_6, should_be_7);
 
         assert_eq!(should_be_0, 0);
         assert_eq!(should_be_2, 2);
