@@ -1,7 +1,7 @@
 use monomer::{IMono, Mono, NucleicAcid};
 
 // TODO: See how to implement this thing as an iterator for read only
-pub trait Polymer<T>: IntoIterator + std::marker::Sized + PartialEq
+pub trait Polymer<T>: std::marker::Sized + PartialEq
 where
     T: Mono,
 {
@@ -40,35 +40,32 @@ where
 // NOTE: No implementation for Mono.
 // Means No protien strucutres as of yet.
 #[derive(Debug)]
-pub struct Strand<T>(Vec<T>)
+pub struct Strand<T>
 where
-    T: Mono;
-
-impl<T: Mono> IntoIterator for Strand<T> {
-    type Item = T;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
+    T: Mono,
+{
+    pub contents: Vec<T>,
 }
 
 impl<T: Mono> PartialEq for Strand<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+        self.contents == other.contents
     }
 }
 
 impl<T: Mono> Polymer<T> for Strand<T> {
     fn new() -> Self {
-        Strand(Vec::<T>::new())
+        Strand {
+            contents: Vec::<T>::new(),
+        }
     }
 
     fn push(&mut self, t: T) {
-        self.0.push(t);
+        self.contents.push(t);
     }
 
     fn concat(&mut self, other: &mut Self) {
-        self.0.append(&mut other.0);
+        self.contents.append(&mut other.contents);
     }
 }
 
@@ -76,57 +73,54 @@ impl<T: IMono> IPolymer<T> for Strand<T> {
     fn inverse(&self) -> Self {
         let mut next = Strand::new();
 
-        for x in &self.0 {
+        for x in &self.contents {
             // NOTE: Using clone here, because I'm counting on OnceVals
             // worth remembering.
-            next.push(T::inverse(&x.clone()));
+            next.push(T::inverse(&x));
 
             // TODO: TEST:
             // next.push(T::inverse(&x))
         }
 
-        next.0 = next.0.into_iter().rev().collect();
+        next.contents = next.contents.into_iter().rev().collect();
         next
     }
 }
 
 #[derive(Debug)]
-pub struct Helix<T>(Strand<T>)
+pub struct Helix<T>
 where
-    T: IMono;
-
-impl<T: IMono> IntoIterator for Helix<T> {
-    type Item = T;
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
+    T: IMono,
+{
+    pub strand: Strand<T>,
 }
 
 impl<T: IMono> PartialEq for Helix<T> {
     fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
+        self.strand == other.strand
     }
 }
 
 impl<T: IMono> Polymer<T> for Helix<T> {
     fn new() -> Self {
-        Helix(Strand::<T>::new())
+        Helix {
+            strand: Strand::<T>::new(),
+        }
     }
 
     fn push(&mut self, t: T) {
-        self.0.push(t);
+        self.strand.push(t);
     }
 
     fn concat(&mut self, other: &mut Self) {
-        self.0.concat(&mut other.0);
+        self.strand.concat(&mut other.strand);
     }
 }
 
 impl<T: IMono> IPolymer<T> for Helix<T> {
     fn inverse(&self) -> Self {
         let mut x = Helix::<T>::new();
-        x.0 = self.0.inverse();
+        x.strand = self.strand.inverse();
         x
     }
 }
@@ -134,8 +128,8 @@ impl<T: IMono> IPolymer<T> for Helix<T> {
 impl<T: IMono> Helix<T> {
     pub fn pairs(&self) -> Vec<(T, T)> {
         let mut next = Vec::<(T, T)>::new();
-        let a = &self.0;
-        for x in &a.0 {
+        let a = &self.strand;
+        for x in &a.contents {
             next.push((x.clone(), T::inverse(&x)));
         }
 
@@ -144,7 +138,7 @@ impl<T: IMono> Helix<T> {
 
     pub fn strands(self) -> (Strand<T>, Strand<T>) {
         let x = self.inverse();
-        (self.0, x.0)
+        (self.strand, x.strand)
     }
 }
 
@@ -154,8 +148,7 @@ impl<T: NucleicAcid> Helix<T> {
         let mut n = 0;
         let mut d = 0;
 
-        let a = &self.0;
-        for x in &a.0 {
+        for x in &self.strand.contents {
             d = d + 1;
             if x.is_g_or_c() {
                 n = n + 1;

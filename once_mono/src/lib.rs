@@ -1,7 +1,7 @@
-use once_cell::{OnceCell, OnceVal};
 use monomer::{IMono, Mono, NucleicAcid};
+use once_cell::{OnceCell, OnceVal};
 
-fn wrap<T>(t: T) -> OnceVal<T>
+pub fn create<T>(t: T) -> OnceVal<T>
 where
     T: Mono,
 {
@@ -28,9 +28,15 @@ impl<T: Mono> Mono for Monomer<T> {
     fn from_char(c: char) -> Option<Self> {
         let x = T::from_char(c);
         match x {
-            Some(y) => Some(Monomer(wrap(y))),
+            Some(y) => Some(Monomer(create(y))),
             None => None,
         }
+    }
+}
+
+impl<T: Mono> Monomer<T> {
+    pub fn read(&self) -> std::sync::RwLockReadGuard<'_, Option<T>> {
+        self.0.read()
     }
 }
 
@@ -53,7 +59,7 @@ impl<T: IMono> Mono for IMonomer<T> {
     fn from_char(c: char) -> Option<Self> {
         let x = T::from_char(c);
         match x {
-            Some(y) => Some(IMonomer(wrap(y))),
+            Some(y) => Some(IMonomer(create(y))),
             None => None,
         }
     }
@@ -61,12 +67,18 @@ impl<T: IMono> Mono for IMonomer<T> {
 
 impl<T: IMono> IMono for IMonomer<T> {
     fn inverse(c: &Self) -> Self {
-        IMonomer(wrap(T::inverse(c.0.read().as_ref().unwrap())))
+        IMonomer(create(T::inverse(c.0.read().as_ref().unwrap())))
     }
 }
 
 impl<T: NucleicAcid> NucleicAcid for IMonomer<T> {
     fn is_g_or_c(&self) -> bool {
         self.0.read().as_ref().unwrap().is_g_or_c()
+    }
+}
+
+impl<T: IMono> IMonomer<T> {
+    pub fn read(&self) -> std::sync::RwLockReadGuard<'_, Option<T>> {
+        self.0.read()
     }
 }

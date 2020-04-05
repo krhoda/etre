@@ -8,27 +8,27 @@ where
     U: Polymer<T>,
 {
     fn new() -> Self;
-    fn new_poly() -> U;
-    fn from_char(c: char) -> Option<T>;
+    // fn new_poly() -> U;
+    fn from_char(&self, c: char) -> Option<T>;
 
-    fn from_string(s: String) -> Option<U>;
-    fn push(t: T, u: &mut U);
-    fn concat(fst: &mut U, snd: &mut U);
+    fn from_string(&self, s: String) -> Option<U>;
+    // fn push(&self, t: T, u: &mut U);
+    // fn concat(&self, fst: &mut U, snd: &mut U);
 }
 
 pub trait ICat<T, U>: Cat<T, U>
 where
     T: IMono,
-    U: Polymer<T>,
+    U: IPolymer<T>,
 {
-    fn inverse_m(t: &T) -> T;
-    fn inverse_p(u: &U) -> U;
+    fn inverse_m(&self, t: &T) -> T;
+    fn inverse_p(&self, u: &U) -> U;
 }
 
 pub trait NCat<T, U>: ICat<T, U>
 where
     T: NucleicAcid,
-    U: Polymer<T>,
+    U: IPolymer<T>,
 {
     fn gc_content(u: U) -> (u64, u64);
 }
