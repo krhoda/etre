@@ -64,10 +64,9 @@ impl<T: IMono> IMono for IMonomer<T> {
         IMonomer(wrap(T::inverse(c.0.read().as_ref().unwrap())))
     }
 }
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+
+impl<T: NucleicAcid> NucleicAcid for IMonomer<T> {
+    fn is_g_or_c(&self) -> bool {
+        self.0.read().as_ref().unwrap().is_g_or_c()
     }
 }
