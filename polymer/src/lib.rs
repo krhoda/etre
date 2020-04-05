@@ -148,6 +148,7 @@ impl<T: IMono> Helix<T> {
     }
 }
 
+// TODO: MOVE TO STRAND!
 impl<T: NucleicAcid> Helix<T> {
     pub fn gc_content(&self) -> (u64, u64) {
         let mut n = 0;

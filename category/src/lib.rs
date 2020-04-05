@@ -1,6 +1,38 @@
-// use monomer::Monomer;
-// use once_cell::OnceVal;
-// use polymer::Polymer;
+use monomer::{IMono, Mono, NucleicAcid};
+use once_cell::{OnceCell, OnceVal};
+use polymer::{IPolymer, Polymer};
+
+pub trait Cat<T, U>
+where
+    T: Mono,
+    U: Polymer<T>,
+{
+    fn new() -> Self;
+    fn new_poly() -> U;
+    fn from_char(c: char) -> Option<T>;
+
+    fn from_string(s: String) -> Option<U>;
+    fn push(t: T, u: &mut U);
+    fn concat(fst: &mut U, snd: &mut U);
+}
+
+pub trait ICat<T, U>: Cat<T, U>
+where
+    T: IMono,
+    U: Polymer<T>,
+{
+    fn inverse_m(t: &T) -> T;
+    fn inverse_p(u: &U) -> U;
+}
+
+pub trait NCat<T, U>: ICat<T, U>
+where
+    T: NucleicAcid,
+    U: Polymer<T>,
+{
+    fn gc_content(u: U) -> (u64, u64);
+}
+
 
 // pub trait Cat<T, U>
 // where

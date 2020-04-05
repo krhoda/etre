@@ -12,42 +12,42 @@ use std::fmt::Display;
 // TODO: Support the other DNA alphabets.
 
 #[derive(Debug, Display, PartialEq, Clone)]
-pub enum DNucleotide {
+pub enum DNA {
     A,
     T,
     G,
     C,
 }
 
-impl NucleicAcid for DNucleotide {
+impl NucleicAcid for DNA {
     fn is_g_or_c(&self) -> bool {
         match self {
-            DNucleotide::G => true,
-            DNucleotide::C => true,
+            DNA::G => true,
+            DNA::C => true,
             _ => false,
         }
     }
 }
 
-impl Mono for DNucleotide {
-    fn from_char(c: char) -> Option<DNucleotide> {
+impl Mono for DNA {
+    fn from_char(c: char) -> Option<DNA> {
         match c.to_uppercase().to_string().as_ref() {
-            "A" => Some(DNucleotide::A),
-            "T" => Some(DNucleotide::T),
-            "C" => Some(DNucleotide::C),
-            "G" => Some(DNucleotide::G),
+            "A" => Some(DNA::A),
+            "T" => Some(DNA::T),
+            "C" => Some(DNA::C),
+            "G" => Some(DNA::G),
             _ => None,
         }
     }
 }
 
-impl IMono for DNucleotide {
+impl IMono for DNA {
     fn inverse(c: &Self) -> Self {
         match c {
-            DNucleotide::A => DNucleotide::T,
-            DNucleotide::T => DNucleotide::A,
-            DNucleotide::C => DNucleotide::G,
-            DNucleotide::G => DNucleotide::C,
+            DNA::A => DNA::T,
+            DNA::T => DNA::A,
+            DNA::C => DNA::G,
+            DNA::G => DNA::C,
         }
     }
 }
@@ -55,47 +55,47 @@ impl IMono for DNucleotide {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use polymer::{Helix, IPolymer, Polymer, Strand};
+    use polymer::{Helix, IPolymer, Polymer};
 
     #[test]
     fn dna_from_char() {
         assert_eq!(
-            DNucleotide::from_char("A".chars().next().unwrap()),
-            Some(DNucleotide::A)
+            DNA::from_char("A".chars().next().unwrap()),
+            Some(DNA::A)
         );
         assert_eq!(
-            DNucleotide::from_char("a".chars().next().unwrap()),
-            Some(DNucleotide::A)
+            DNA::from_char("a".chars().next().unwrap()),
+            Some(DNA::A)
         );
 
         assert_eq!(
-            DNucleotide::from_char("T".chars().next().unwrap()),
-            Some(DNucleotide::T)
+            DNA::from_char("T".chars().next().unwrap()),
+            Some(DNA::T)
         );
         assert_eq!(
-            DNucleotide::from_char("t".chars().next().unwrap()),
-            Some(DNucleotide::T)
+            DNA::from_char("t".chars().next().unwrap()),
+            Some(DNA::T)
         );
 
         assert_eq!(
-            DNucleotide::from_char("C".chars().next().unwrap()),
-            Some(DNucleotide::C)
+            DNA::from_char("C".chars().next().unwrap()),
+            Some(DNA::C)
         );
         assert_eq!(
-            DNucleotide::from_char("c".chars().next().unwrap()),
-            Some(DNucleotide::C)
+            DNA::from_char("c".chars().next().unwrap()),
+            Some(DNA::C)
         );
 
         assert_eq!(
-            DNucleotide::from_char("G".chars().next().unwrap()),
-            Some(DNucleotide::G)
+            DNA::from_char("G".chars().next().unwrap()),
+            Some(DNA::G)
         );
         assert_eq!(
-            DNucleotide::from_char("g".chars().next().unwrap()),
-            Some(DNucleotide::G)
+            DNA::from_char("g".chars().next().unwrap()),
+            Some(DNA::G)
         );
 
-        assert_eq!(DNucleotide::from_char("d".chars().next().unwrap()), None);
+        assert_eq!(DNA::from_char("d".chars().next().unwrap()), None);
     }
 
     // TODO Add Inverse:
@@ -105,13 +105,13 @@ mod tests {
     #[test]
     fn helix_new_push_eq() {
         let helix_str = String::from("atcg");
-        let h = Helix::<DNucleotide>::from_string(helix_str).unwrap();
+        let h = Helix::<DNA>::from_string(helix_str).unwrap();
         let mut h2 = Helix::new();
 
-        h2.push(DNucleotide::A);
-        h2.push(DNucleotide::T);
-        h2.push(DNucleotide::C);
-        h2.push(DNucleotide::G);
+        h2.push(DNA::A);
+        h2.push(DNA::T);
+        h2.push(DNA::C);
+        h2.push(DNA::G);
 
         assert_eq!(h, h2);
     }
@@ -121,8 +121,8 @@ mod tests {
         let helix_str = String::from("gattaca");
         let bad_str = String::from("bad");
 
-        let maybe_h = Helix::<DNucleotide>::from_string(helix_str);
-        let maybe_none = Helix::<DNucleotide>::from_string(bad_str);
+        let maybe_h = Helix::<DNA>::from_string(helix_str);
+        let maybe_none = Helix::<DNA>::from_string(bad_str);
 
         match maybe_h {
             Some(_) => assert!(true),
@@ -141,9 +141,9 @@ mod tests {
         let str2 = String::from("cg");
         let str3 = String::from("atcg");
 
-        let mut h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
-        let mut h2 = Helix::<DNucleotide>::from_string(str2).unwrap();
-        let h3 = Helix::<DNucleotide>::from_string(str3).unwrap();
+        let mut h1 = Helix::<DNA>::from_string(str1).unwrap();
+        let mut h2 = Helix::<DNA>::from_string(str2).unwrap();
+        let h3 = Helix::<DNA>::from_string(str3).unwrap();
         h1.concat(&mut h2);
         assert_eq!(h1, h3)
     }
@@ -153,8 +153,8 @@ mod tests {
         let str1 = String::from("atcg");
         let str2 = String::from("cgat");
 
-        let h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
-        let h2 = Helix::<DNucleotide>::from_string(str2).unwrap();
+        let h1 = Helix::<DNA>::from_string(str1).unwrap();
+        let h2 = Helix::<DNA>::from_string(str2).unwrap();
 
         let i1 = h1.inverse();
         let i2 = i1.inverse();
@@ -165,15 +165,15 @@ mod tests {
     #[test]
     fn test_pairs() {
         let str1 = String::from("atcg");
-        let h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
+        let h1 = Helix::<DNA>::from_string(str1).unwrap();
         let pairs = h1.pairs();
 
         assert_eq!(
             vec![
-                (DNucleotide::A, DNucleotide::T),
-                (DNucleotide::T, DNucleotide::A),
-                (DNucleotide::C, DNucleotide::G),
-                (DNucleotide::G, DNucleotide::C),
+                (DNA::A, DNA::T),
+                (DNA::T, DNA::A),
+                (DNA::C, DNA::G),
+                (DNA::G, DNA::C),
             ],
             pairs
         );
@@ -184,8 +184,8 @@ mod tests {
         let str1 = String::from("atcg");
         let str2 = String::from("cgat");
 
-        let h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
-        let h2 = Helix::<DNucleotide>::from_string(str2).unwrap();
+        let h1 = Helix::<DNA>::from_string(str1).unwrap();
+        let h2 = Helix::<DNA>::from_string(str2).unwrap();
 
         let (fst1, snd1) = h1.strands();
         let (fst2, snd2) = h2.strands();
@@ -199,8 +199,8 @@ mod tests {
         let str1 = String::from("atcg");
         let str2 = String::from("atata");
 
-        let h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
-        let h2 = Helix::<DNucleotide>::from_string(str2).unwrap();
+        let h1 = Helix::<DNA>::from_string(str1).unwrap();
+        let h2 = Helix::<DNA>::from_string(str2).unwrap();
 
         let (maybe_2, maybe_4) = h1.gc_content();
         let (maybe_0, maybe_5) = h2.gc_content();
