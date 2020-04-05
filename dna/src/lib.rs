@@ -1,18 +1,14 @@
 #[macro_use]
 extern crate enum_display_derive;
-// use once_cell::{OnceCell, OnceVal};
 
-// TODO RESTORE:
 use category::{Cat, ICat, NCat};
 use monomer::{IMono, Mono, NucleicAcid};
-use once_mono::{IMonomer, Monomer};
+use once_mono::{IMonomer};
 use polymer::{Helix, Polymer, Strand};
 
 use std::fmt::Display;
-// use std::sync::Arc;
 
 // TODO: Support the other DNA alphabets.
-
 #[derive(Debug, Display, PartialEq, Clone)]
 pub enum DNA {
     A,
@@ -121,6 +117,7 @@ impl ICat<DNACell, Helix<DNACell>> for DNACat {
         for z in &u.strand.contents {
             y.push(self.inverse_m(&z));
         }
+        y.strand.contents =  y.strand.contents.into_iter().rev().collect();
         y
     }
 }
@@ -158,7 +155,6 @@ impl DNACat {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use polymer::{Helix, IPolymer, Polymer};
 
     #[test]
     fn dna_from_char() {
@@ -238,30 +234,33 @@ mod tests {
     }
 
     // TODO Add Inverse:
-
     // Now for polynomial tests.
 
     #[test]
-    fn helix_new_push_eq() {
-        let helix_str = String::from("atcg");
-        let h = Helix::<DNA>::from_string(helix_str).unwrap();
-        let mut h2 = Helix::new();
+    fn new_helix_cat() {
+        let c = DNACat::new();
 
-        h2.push(DNA::A);
-        h2.push(DNA::T);
-        h2.push(DNA::C);
-        h2.push(DNA::G);
+        let helix_str = String::from("atcg");
+        let h = c.from_string(helix_str).unwrap();
+        let mut h2 = Helix::<DNACell>::new();
+
+        h2.push(c.a.clone());
+        h2.push(c.t.clone());
+        h2.push(c.c.clone());
+        h2.push(c.g.clone());
 
         assert_eq!(h, h2);
     }
 
     #[test]
     fn helix_from_string() {
+        let c = DNACat::new();
+
         let helix_str = String::from("gattaca");
         let bad_str = String::from("bad");
 
-        let maybe_h = Helix::<DNA>::from_string(helix_str);
-        let maybe_none = Helix::<DNA>::from_string(bad_str);
+        let maybe_h = c.from_string(helix_str);
+        let maybe_none = c.from_string(bad_str);
 
         match maybe_h {
             Some(_) => assert!(true),
@@ -276,43 +275,52 @@ mod tests {
 
     #[test]
     fn helix_concat() {
+        let c = DNACat::new();
+
         let str1 = String::from("at");
         let str2 = String::from("cg");
         let str3 = String::from("atcg");
 
-        let mut h1 = Helix::<DNA>::from_string(str1).unwrap();
-        let mut h2 = Helix::<DNA>::from_string(str2).unwrap();
-        let h3 = Helix::<DNA>::from_string(str3).unwrap();
+        let mut h1 = c.from_string(str1).unwrap();
+        let mut h2 = c.from_string(str2).unwrap();
+
+        let h3 = c.from_string(str3).unwrap();
         h1.concat(&mut h2);
+
         assert_eq!(h1, h3)
     }
 
     #[test]
     fn test_inverse() {
+        let c = DNACat::new();
+
         let str1 = String::from("atcg");
         let str2 = String::from("cgat");
 
-        let h1 = Helix::<DNA>::from_string(str1).unwrap();
-        let h2 = Helix::<DNA>::from_string(str2).unwrap();
+        let h1 = c.from_string(str1).unwrap();
+        let h2 = c.from_string(str2).unwrap();
 
-        let i1 = h1.inverse();
-        let i2 = i1.inverse();
+        let i1 = c.inverse_p(&h1);
+        let i2 = c.inverse_p(&i1);
+
         assert_eq!(i1, h2);
         assert_eq!(i2, h1);
     }
 
     #[test]
     fn test_pairs() {
+        let c = DNACat::new();
+
         let str1 = String::from("atcg");
-        let h1 = Helix::<DNA>::from_string(str1).unwrap();
-        let pairs = h1.pairs();
+        let h1 = c.from_string(str1).unwrap();
+        let pairs = c.pairs(h1);
 
         assert_eq!(
             vec![
-                (DNA::A, DNA::T),
-                (DNA::T, DNA::A),
-                (DNA::C, DNA::G),
-                (DNA::G, DNA::C),
+                (c.a.clone(), c.t.clone()),
+                (c.t.clone(), c.a.clone()),
+                (c.c.clone(), c.g.clone()),
+                (c.g.clone(), c.c.clone()),
             ],
             pairs
         );
@@ -320,14 +328,16 @@ mod tests {
 
     #[test]
     fn test_strands() {
+        let c = DNACat::new();
+
         let str1 = String::from("atcg");
         let str2 = String::from("cgat");
 
-        let h1 = Helix::<DNA>::from_string(str1).unwrap();
-        let h2 = Helix::<DNA>::from_string(str2).unwrap();
+        let h1 = c.from_string(str1).unwrap();
+        let h2 = c.from_string(str2).unwrap();
 
-        let (fst1, snd1) = h1.strands();
-        let (fst2, snd2) = h2.strands();
+        let (fst1, snd1) = c.strands(h1);
+        let (fst2, snd2) = c.strands(h2);
 
         assert_eq!(fst1, snd2);
         assert_eq!(fst2, snd1);
@@ -335,11 +345,13 @@ mod tests {
 
     #[test]
     fn test_gc_content() {
+        let c = DNACat::new();
+
         let str1 = String::from("atcg");
         let str2 = String::from("atata");
 
-        let h1 = Helix::<DNA>::from_string(str1).unwrap();
-        let h2 = Helix::<DNA>::from_string(str2).unwrap();
+        let h1 = c.from_string(str1).unwrap();
+        let h2 = c.from_string(str2).unwrap();
 
         let (maybe_2, maybe_4) = h1.gc_content();
         let (maybe_0, maybe_5) = h2.gc_content();
