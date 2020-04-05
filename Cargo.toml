@@ -7,7 +7,7 @@ members = [
 	"dna",
 	"once_mono",
 	"rna",
-	# "codon",
-    # "amino",
+	"codon",
+    "amino",
     # "protien",
 ]

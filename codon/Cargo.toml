@@ -1,5 +1,5 @@
 [package]
-name = "rna"
+name = "codon"
 version = "0.1.0"
 authors = ["K Rhoda <kelseydrhoda@gmail.com>"]
 edition = "2018"
@@ -7,8 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rna = { path = "../rna" }
+amino = { path = "../amino" }
 monomer = { path = "../monomer" }
 polymer = { path = "../polymer" }
 category = { path = "../category" }
 once_mono = { path = "../once_mono" }
-enum-display-derive = "0.1.0"

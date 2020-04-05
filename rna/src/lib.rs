@@ -50,7 +50,7 @@ impl IMono for RNA {
     }
 }
 
-type RNACell = IMonomer<RNA>;
+pub type RNACell = IMonomer<RNA>;
 
 pub struct RNACat {
     a: RNACell,
