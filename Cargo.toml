@@ -5,7 +5,7 @@ members = [
 	"polymer",
 	"category",
 	"dna",
-	"rna",
+	# "rna",
 	# "strand",
 	# "codon,
     # "amino",

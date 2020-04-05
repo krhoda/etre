@@ -1,18 +1,17 @@
 #[macro_use]
 extern crate enum_display_derive;
+// use once_cell::{OnceCell, OnceVal};
 
-use once_cell::{OnceCell, OnceVal};
-
-use category::Cat;
-use monomer::Monomer;
-use polymer::Polymer;
+// TODO RESTORE:
+// use category::Cat;
+use monomer::{IMono, Mono, NucleicAcid};
 
 use std::fmt::Display;
-use std::sync::Arc;
+// use std::sync::Arc;
 
 // TODO: Support the other DNA alphabets.
 
-#[derive(Debug, Display, PartialEq)]
+#[derive(Debug, Display, PartialEq, Clone)]
 pub enum DNucleotide {
     A,
     T,
@@ -20,7 +19,17 @@ pub enum DNucleotide {
     C,
 }
 
-impl Monomer for DNucleotide {
+impl NucleicAcid for DNucleotide {
+    fn is_g_or_c(&self) -> bool {
+        match self {
+            DNucleotide::G => true,
+            DNucleotide::C => true,
+            _ => false,
+        }
+    }
+}
+
+impl Mono for DNucleotide {
     fn from_char(c: char) -> Option<DNucleotide> {
         match c.to_uppercase().to_string().as_ref() {
             "A" => Some(DNucleotide::A),
@@ -32,129 +41,13 @@ impl Monomer for DNucleotide {
     }
 }
 
-pub type DNucl = OnceVal<DNucleotide>;
-
-#[derive(Debug)]
-pub struct Helix(Vec<DNucl>);
-
-impl Polymer<DNucleotide> for Helix {
-    fn new() -> Self {
-        Helix(Vec::<DNucl>::new())
-    }
-
-    fn push(&mut self, n: DNucl) {
-        self.0.push(n);
-    }
-
-    fn concat(&mut self, other: &mut Self) {
-        self.0.append(&mut other.0);
-    }
-}
-
-#[derive(Debug)]
-struct CategoryDNAMachine {
-    a: OnceVal<DNucleotide>,
-    t: OnceVal<DNucleotide>,
-    g: OnceVal<DNucleotide>,
-    c: OnceVal<DNucleotide>,
-}
-
-// The below is a memory/speed(?) optimization I'm testing.
-// It's also a mathematical-categorical view of DNA.
-// For this reason, it has it's name which will likely change
-// As it's structure becomes clearer.
-#[derive(Clone, Debug)]
-pub struct CategoryDNA(Arc<CategoryDNAMachine>);
-
-impl CategoryDNA {
-    pub fn compliment(&self, n: &DNucl) -> DNucl {
-        match n.read().as_ref().unwrap() {
-            DNucleotide::A => self.0.t.clone(),
-            DNucleotide::T => self.0.a.clone(),
-            DNucleotide::C => self.0.g.clone(),
-            DNucleotide::G => self.0.c.clone(),
-        }
-    }
-
-    pub fn inverse(&self, h: &Helix) -> Helix {
-        let mut next = Helix::new();
-
-        for x in &h.0 {
-            next.push(self.compliment(&x.clone()))
-        }
-
-        next.0 = next.0.into_iter().rev().collect();
-        next
-    }
-
-    pub fn pairs(&self, h: &Helix) -> Vec<(DNucl, DNucl)> {
-        let mut next = Vec::<(DNucl, DNucl)>::new();
-        for x in &h.0 {
-            next.push((x.clone(), self.compliment(&x.clone())));
-        }
-
-        next
-    }
-
-    pub fn strands(&self, h: Helix) -> (Helix, Helix) {
-        let x = self.inverse(&h);
-        (h, x)
-    }
-
-    // TODO: Better result than tuple fraction.
-    pub fn gc_content(&self, h: &Helix) -> (u64, u64) {
-        let mut n: u64 = 0;
-        let mut d: u64 = 0;
-        for x in &h.0 {
-            d = d + 1;
-            if CategoryDNA::is_g_or_c(x.read().as_ref().unwrap()) {
-                n = n + 1;
-            }
-        }
-
-        (n, d)
-    }
-
-    fn is_g_or_c(n: &DNucleotide) -> bool {
-        match n {
-            DNucleotide::G => true,
-            DNucleotide::C => true,
-            _ => false,
-        }
-    }
-}
-
-impl Cat<DNucleotide, Helix> for CategoryDNA {
-    fn new() -> CategoryDNA {
-        let mut ac = OnceCell::<DNucleotide>::new();
-        let mut tc = OnceCell::<DNucleotide>::new();
-        let mut gc = OnceCell::<DNucleotide>::new();
-        let mut cc = OnceCell::<DNucleotide>::new();
-
-        ac.write(DNucleotide::A).unwrap();
-        tc.write(DNucleotide::T).unwrap();
-        gc.write(DNucleotide::G).unwrap();
-        cc.write(DNucleotide::C).unwrap();
-
-        let a = ac.read().unwrap();
-        let t = tc.read().unwrap();
-        let g = gc.read().unwrap();
-        let c = cc.read().unwrap();
-
-        CategoryDNA(Arc::new(CategoryDNAMachine {
-            a: a,
-            t: t,
-            g: g,
-            c: c,
-        }))
-    }
-
-    fn read(&self, n: DNucleotide) -> DNucl {
-        match n {
-            DNucleotide::A => self.0.a.clone(),
-            DNucleotide::T => self.0.t.clone(),
-            DNucleotide::C => self.0.c.clone(),
-            DNucleotide::G => self.0.g.clone(),
+impl IMono for DNucleotide {
+    fn inverse(c: &Self) -> Self {
+        match c {
+            DNucleotide::A => DNucleotide::T,
+            DNucleotide::T => DNucleotide::A,
+            DNucleotide::C => DNucleotide::G,
+            DNucleotide::G => DNucleotide::C,
         }
     }
 }
@@ -162,40 +55,7 @@ impl Cat<DNucleotide, Helix> for CategoryDNA {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // TODO: ADD READ TEST.
-
-    #[test]
-    fn dna_cat_new() {
-        let cat = CategoryDNA::new();
-
-        assert_eq!(&DNucleotide::A, cat.0.a.read().as_ref().unwrap());
-        assert_eq!(&DNucleotide::T, cat.0.t.read().as_ref().unwrap());
-        assert_eq!(&DNucleotide::C, cat.0.c.read().as_ref().unwrap());
-        assert_eq!(&DNucleotide::G, cat.0.g.read().as_ref().unwrap());
-    }
-
-    #[test]
-    fn dna_complement() {
-        let cat = CategoryDNA::new();
-
-        assert_eq!(
-            cat.0.a.read().as_ref().unwrap(),
-            cat.compliment(&cat.0.t.clone()).read().as_ref().unwrap()
-        );
-        assert_eq!(
-            cat.0.t.read().as_ref().unwrap(),
-            cat.compliment(&cat.0.a.clone()).read().as_ref().unwrap()
-        );
-        assert_eq!(
-            cat.0.c.read().as_ref().unwrap(),
-            cat.compliment(&cat.0.g.clone()).read().as_ref().unwrap()
-        );
-        assert_eq!(
-            cat.0.g.read().as_ref().unwrap(),
-            cat.compliment(&cat.0.c.clone()).read().as_ref().unwrap()
-        );
-    }
+    use polymer::{Helix, IPolymer, Polymer, Strand};
 
     #[test]
     fn dna_from_char() {
@@ -238,94 +98,115 @@ mod tests {
         assert_eq!(DNucleotide::from_char("d".chars().next().unwrap()), None);
     }
 
+    // TODO Add Inverse:
+
+    // Now for polynomial tests.
+
     #[test]
-    fn helix_new() {
-        let cat = CategoryDNA::new();
-        let mut h = Helix::new();
-        let mut tvec = Vec::<DNucl>::new();
-        assert_eq!(&tvec, &h.0);
-        h.push(cat.read(DNucleotide::A));
-        tvec.push(cat.0.a.clone());
+    fn helix_new_push_eq() {
+        let helix_str = String::from("atcg");
+        let h = Helix::<DNucleotide>::from_string(helix_str).unwrap();
+        let mut h2 = Helix::new();
 
-        assert_eq!(&tvec, &h.0);
+        h2.push(DNucleotide::A);
+        h2.push(DNucleotide::T);
+        h2.push(DNucleotide::C);
+        h2.push(DNucleotide::G);
 
-        h.push(cat.read(DNucleotide::T));
-        tvec.push(cat.0.t.clone());
-
-        assert_eq!(&tvec, &h.0);
-
-        h.push(cat.read(DNucleotide::C));
-        tvec.push(cat.0.c.clone());
-
-        assert_eq!(&tvec, &h.0);
-
-        h.push(cat.read(DNucleotide::G));
-        tvec.push(cat.0.g.clone());
-
-        assert_eq!(&tvec, &h.0);
+        assert_eq!(h, h2);
     }
 
     #[test]
     fn helix_from_string() {
-        let cat = CategoryDNA::new();
+        let helix_str = String::from("gattaca");
+        let bad_str = String::from("bad");
 
-        let hxstr = String::from("gattaca");
-        let badstr = String::from("a123g");
+        let maybe_h = Helix::<DNucleotide>::from_string(helix_str);
+        let maybe_none = Helix::<DNucleotide>::from_string(bad_str);
 
-        let mut control_h = Helix::new();
-
-        control_h.push(cat.read(DNucleotide::G));
-        control_h.push(cat.read(DNucleotide::A));
-        control_h.push(cat.read(DNucleotide::T));
-        control_h.push(cat.read(DNucleotide::T));
-        control_h.push(cat.read(DNucleotide::A));
-        control_h.push(cat.read(DNucleotide::C));
-        control_h.push(cat.read(DNucleotide::A));
-
-        let maybe_none = cat.from_string(badstr);
-        match maybe_none {
-            None => assert!(true),
-            Some(x) => panic!("Should've recieved nothing, got: {:?}", x),
+        match maybe_h {
+            Some(_) => assert!(true),
+            None => panic!("Recieved 'None' on good input"),
         }
 
-        let maybe_h = cat.from_string(hxstr);
-        match maybe_h {
-            None => panic!("Failed in Helix from_string with good string"),
-            Some(h) => assert_eq!(h.0, control_h.0),
+        match maybe_none {
+            None => assert!(true),
+            Some(x) => panic!("Recieved 'Some({:?})' on bad input", x),
         }
     }
 
     #[test]
-    fn test_inverse_and_strands() {
-        let cat = CategoryDNA::new();
+    fn helix_concat() {
+        let str1 = String::from("at");
+        let str2 = String::from("cg");
+        let str3 = String::from("atcg");
 
-        let hxstr = String::from("gattaca");
-        let invhxstr = String::from("tgtaatc");
-        let h = cat.from_string(hxstr).unwrap();
-        let h2 = cat.from_string(invhxstr).unwrap();
-        assert_eq!(cat.inverse(&h).0, h2.0);
-        assert_eq!(cat.inverse(&cat.inverse(&h)).0, h.0);
+        let mut h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
+        let mut h2 = Helix::<DNucleotide>::from_string(str2).unwrap();
+        let h3 = Helix::<DNucleotide>::from_string(str3).unwrap();
+        h1.concat(&mut h2);
+        assert_eq!(h1, h3)
+    }
 
-        let (fst, snd) = cat.strands(h);
-        assert_eq!(fst.0, cat.inverse(&h2).0);
-        assert_eq!(snd.0, h2.0);
+    #[test]
+    fn test_inverse() {
+        let str1 = String::from("atcg");
+        let str2 = String::from("cgat");
+
+        let h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
+        let h2 = Helix::<DNucleotide>::from_string(str2).unwrap();
+
+        let i1 = h1.inverse();
+        let i2 = i1.inverse();
+        assert_eq!(i1, h2);
+        assert_eq!(i2, h1);
+    }
+
+    #[test]
+    fn test_pairs() {
+        let str1 = String::from("atcg");
+        let h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
+        let pairs = h1.pairs();
+
+        assert_eq!(
+            vec![
+                (DNucleotide::A, DNucleotide::T),
+                (DNucleotide::T, DNucleotide::A),
+                (DNucleotide::C, DNucleotide::G),
+                (DNucleotide::G, DNucleotide::C),
+            ],
+            pairs
+        );
+    }
+
+    #[test]
+    fn test_strands() {
+        let str1 = String::from("atcg");
+        let str2 = String::from("cgat");
+
+        let h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
+        let h2 = Helix::<DNucleotide>::from_string(str2).unwrap();
+
+        let (fst1, snd1) = h1.strands();
+        let (fst2, snd2) = h2.strands();
+
+        assert_eq!(fst1, snd2);
+        assert_eq!(fst2, snd1);
     }
 
     #[test]
     fn test_gc_content() {
-        let cat = CategoryDNA::new();
+        let str1 = String::from("atcg");
+        let str2 = String::from("atata");
 
-        let hxstr = String::from("gattaca");
-        let nogc = String::from("ttaatt");
+        let h1 = Helix::<DNucleotide>::from_string(str1).unwrap();
+        let h2 = Helix::<DNucleotide>::from_string(str2).unwrap();
 
-        let h = cat.from_string(hxstr).unwrap();
-        let h2 = cat.from_string(nogc).unwrap();
-        let (should_be_2, should_be_7) = cat.gc_content(&h);
-        let (should_be_0, should_be_6) = cat.gc_content(&h2);
-
-        assert_eq!(should_be_0, 0);
-        assert_eq!(should_be_2, 2);
-        assert_eq!(should_be_6, 6);
-        assert_eq!(should_be_7, 7);
+        let (maybe_2, maybe_4) = h1.gc_content();
+        let (maybe_0, maybe_5) = h2.gc_content();
+        assert_eq!(0, maybe_0);
+        assert_eq!(2, maybe_2);
+        assert_eq!(4, maybe_4);
+        assert_eq!(5, maybe_5);
     }
 }
