@@ -87,6 +87,22 @@ impl<T: IMono> IPolymer<T> for Strand<T> {
     }
 }
 
+impl<T: NucleicAcid> Strand<T> {
+    pub fn gc_content(&self) -> (u64, u64) {
+        let mut n = 0;
+        let mut d = 0;
+
+        for x in &self.contents {
+            d = d + 1;
+            if x.is_g_or_c() {
+                n = n + 1;
+            }
+        }
+
+        (n, d)
+    }
+}
+
 #[derive(Debug)]
 pub struct Helix<T>
 where
@@ -145,16 +161,6 @@ impl<T: IMono> Helix<T> {
 // TODO: MOVE TO STRAND!
 impl<T: NucleicAcid> Helix<T> {
     pub fn gc_content(&self) -> (u64, u64) {
-        let mut n = 0;
-        let mut d = 0;
-
-        for x in &self.strand.contents {
-            d = d + 1;
-            if x.is_g_or_c() {
-                n = n + 1;
-            }
-        }
-
-        (n, d)
+        self.strand.gc_content()
     }
 }

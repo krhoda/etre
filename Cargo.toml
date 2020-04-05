@@ -6,9 +6,8 @@ members = [
 	"category",
 	"dna",
 	"once_mono",
-	# "rna",
-	# "strand",
-	# "codon,
+	"rna",
+	# "codon",
     # "amino",
     # "protien",
 ]
