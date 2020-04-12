@@ -1,11 +1,9 @@
 #[macro_use]
-use rna::{RNA, RNACat, RNACell};
+use rna::{RNA, RNACell};
 use amino::Amino;
-use category::{Cat, ICat, NCat};
-use monomer::{IMono, Mono, NucleicAcid};
-use once_mono::IMonomer;
-use polymer::{Polymer, Strand};
+use polymer::Strand;
 
+#[derive(Debug, PartialEq)]
 pub struct Codon {
     pub rna: (RNACell, RNACell, RNACell),
 }
@@ -32,6 +30,7 @@ impl Codon {
 
     // NOTE: Ignoring the AUG => START command. Will use seperate function for this.
     pub fn to_amino_encoding(&self) -> Amino {
+        //
         let (fst, snd, thd) = &self.rna;
 
         let x = fst.read();
@@ -133,70 +132,34 @@ impl Codon {
     }
 }
 
-// BRUTE FORCE:
-// pub enum Codon {
-//     AAA,
-//     AAU,
-//     AAC,
-//     AAG,
-//     AUA,
-//     AUU,
-//     AUC,
-//     AUG,
-//     ACA,
-//     ACU,
-//     ACC,
-//     ACG,
-//     AGA,
-//     AGU,
-//     AGC,
-//     AGG,
-//     UAA,
-//     UAU,
-//     UAC,
-//     UAG,
-//     UUA,
-//     UUU,
-//     UUC,
-//     UUG,
-//     UCA,
-//     UCU,
-//     UCC,
-//     UCG,
-//     UGA,
-//     UGU,
-//     UGC,
-//     UGG,
-//     CAA,
-//     CAU,
-//     CAC,
-//     CAG,
-//     CUA,
-//     CUU,
-//     CUC,
-//     CUG,
-//     CCA,
-//     CCU,
-//     CCC,
-//     CCG,
-//     CGA,
-//     CGU,
-//     CGC,
-//     CGG,
-//     GAA,
-//     GAU,
-//     GAC,
-//     GAG,
-//     GUA,
-//     GUU,
-//     GUC,
-//     GUG,
-//     GCA,
-//     GCU,
-//     GCC,
-//     GCG,
-//     GGA,
-//     GGU,
-//     GGC,
-//     GGG,
-// }
+mod tests {
+    use super::*;
+    use category::Cat;
+    use rna::RNACat;
+
+    #[test]
+    fn codon_from_strand() {
+        let cat = RNACat::new();
+        let strand = cat.from_string(String::from("aug")).unwrap();
+        let codon = Codon::from_strand(strand).unwrap();
+        let test = (
+            cat.from_char("a".chars().next().unwrap()).unwrap(),
+            cat.from_char("u".chars().next().unwrap()).unwrap(),
+            cat.from_char("g".chars().next().unwrap()).unwrap(),
+        );
+        assert_eq!(codon.rna, test);
+    }
+
+    #[test]
+    fn amino_from_codon() {
+        // TODO: MORE RIGOROUS ACC. TESTS.
+
+        let cat = RNACat::new();
+        let strand = cat.from_string(String::from("aug")).unwrap();
+        let codon = Codon::from_strand(strand).unwrap();
+
+        let amino = Amino::Met;
+
+        assert_eq!(amino, codon.to_amino_encoding())
+    }
+}

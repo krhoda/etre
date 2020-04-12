@@ -1,6 +1,6 @@
 
 // TODO MAKE MONOMER BY CHANGING FROM CHAR TO FROM STR
-
+#[derive(PartialEq, Debug)]
 pub enum Amino {
     START,
     STOP,
