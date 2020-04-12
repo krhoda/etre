@@ -9,5 +9,6 @@ members = [
 	"rna",
 	"codon",
     "amino",
+    "polymerase",
     # "protien",
 ]
