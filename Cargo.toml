@@ -10,5 +10,6 @@ members = [
 	"codon",
     "amino",
     "polymerase",
+	"ribosome",
     # "protien",
 ]

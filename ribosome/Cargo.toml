@@ -1,0 +1,16 @@
+[package]
+name = "ribosome"
+version = "0.1.0"
+authors = ["K Rhoda <kelseydrhoda@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+amino = { path = "../amino" }
+category = { path = "../category" }
+codon = { path = "../codon" }
+monomer = { path = "../monomer" }
+once_mono = { path = "../once_mono" }
+polymer = { path = "../polymer" }
+rna = { path = "../rna" }
