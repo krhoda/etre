@@ -28,8 +28,8 @@ impl NucleicAcid for RNA {
 }
 
 impl Mono for RNA {
-    fn from_char(c: char) -> Option<RNA> {
-        match c.to_uppercase().to_string().as_ref() {
+    fn from_string(s: String) -> Option<RNA> {
+        match s.to_uppercase().as_ref() {
             "A" => Some(RNA::A),
             "U" => Some(RNA::U),
             "C" => Some(RNA::C),
@@ -62,15 +62,15 @@ pub struct RNACat {
 impl Cat<RNACell, Strand<RNACell>> for RNACat {
     fn new() -> Self {
         RNACat {
-            a: IMonomer::from_char(String::from("a").chars().next().unwrap()).unwrap(),
-            u: IMonomer::from_char(String::from("u").chars().next().unwrap()).unwrap(),
-            c: IMonomer::from_char(String::from("c").chars().next().unwrap()).unwrap(),
-            g: IMonomer::from_char(String::from("g").chars().next().unwrap()).unwrap(),
+            a: IMonomer::from_string(String::from("a")).unwrap(),
+            u: IMonomer::from_string(String::from("u")).unwrap(),
+            c: IMonomer::from_string(String::from("c")).unwrap(),
+            g: IMonomer::from_string(String::from("g")).unwrap(),
         }
     }
 
-    fn from_char(&self, c: char) -> Option<RNACell> {
-        match RNA::from_char(c) {
+    fn monomer_from_string(&self, s: String) -> Option<RNACell> {
+        match RNA::from_string(s) {
             None => None,
             Some(x) => match x {
                 RNA::A => Some(self.a.clone()),
@@ -81,12 +81,12 @@ impl Cat<RNACell, Strand<RNACell>> for RNACat {
         }
     }
 
-    fn from_string(&self, s: String) -> Option<Strand<RNACell>> {
+    fn polymer_from_string(&self, s: String) -> Option<Strand<RNACell>> {
         let mut x = Strand::<RNACell>::new();
         let mut ok = true;
 
         for c in s.chars() {
-            match self.from_char(c) {
+            match self.monomer_from_string(c.to_string()) {
                 Some(y) => x.push(y),
                 None => {
                     ok = false;
@@ -146,7 +146,7 @@ mod tests {
         let c = RNACat::new();
 
         assert_eq!(
-            c.from_char("A".chars().next().unwrap())
+            c.monomer_from_string(String::from("A"))
                 .unwrap()
                 .read()
                 .as_ref()
@@ -154,7 +154,7 @@ mod tests {
             &RNA::A
         );
         assert_eq!(
-            c.from_char("a".chars().next().unwrap())
+            c.monomer_from_string(String::from("a"))
                 .unwrap()
                 .read()
                 .as_ref()
@@ -163,7 +163,7 @@ mod tests {
         );
 
         assert_eq!(
-            c.from_char("U".chars().next().unwrap())
+            c.monomer_from_string(String::from("U"))
                 .unwrap()
                 .read()
                 .as_ref()
@@ -172,7 +172,7 @@ mod tests {
         );
 
         assert_eq!(
-            c.from_char("u".chars().next().unwrap())
+            c.monomer_from_string(String::from("u"))
                 .unwrap()
                 .read()
                 .as_ref()
@@ -181,7 +181,7 @@ mod tests {
         );
 
         assert_eq!(
-            c.from_char("C".chars().next().unwrap())
+            c.monomer_from_string(String::from("C"))
                 .unwrap()
                 .read()
                 .as_ref()
@@ -189,7 +189,7 @@ mod tests {
             &RNA::C
         );
         assert_eq!(
-            c.from_char("c".chars().next().unwrap())
+            c.monomer_from_string(String::from("c"))
                 .unwrap()
                 .read()
                 .as_ref()
@@ -198,7 +198,7 @@ mod tests {
         );
 
         assert_eq!(
-            c.from_char("G".chars().next().unwrap())
+            c.monomer_from_string(String::from("G"))
                 .unwrap()
                 .read()
                 .as_ref()
@@ -207,7 +207,7 @@ mod tests {
         );
 
         assert_eq!(
-            c.from_char("g".chars().next().unwrap())
+            c.monomer_from_string(String::from("g"))
                 .unwrap()
                 .read()
                 .as_ref()
@@ -215,7 +215,7 @@ mod tests {
             &RNA::G
         );
 
-        assert_eq!(c.from_char("d".chars().next().unwrap()), None);
+        assert_eq!(c.monomer_from_string(String::from("d")), None);
     }
 
     // TODO Add Inverse:
@@ -226,7 +226,7 @@ mod tests {
         let c = RNACat::new();
 
         let strand_str = String::from("aucg");
-        let h = c.from_string(strand_str).unwrap();
+        let h = c.polymer_from_string(strand_str).unwrap();
         let mut h2 = Strand::<RNACell>::new();
 
         h2.push(c.a.clone());
@@ -244,8 +244,8 @@ mod tests {
         let strand_str = String::from("gauuaca");
         let bad_str = String::from("bad");
 
-        let maybe_h = c.from_string(strand_str);
-        let maybe_none = c.from_string(bad_str);
+        let maybe_h = c.polymer_from_string(strand_str);
+        let maybe_none = c.polymer_from_string(bad_str);
 
         match maybe_h {
             Some(_) => assert!(true),
@@ -266,10 +266,10 @@ mod tests {
         let str2 = String::from("cg");
         let str3 = String::from("aucg");
 
-        let mut h1 = c.from_string(str1).unwrap();
-        let mut h2 = c.from_string(str2).unwrap();
+        let mut h1 = c.polymer_from_string(str1).unwrap();
+        let mut h2 = c.polymer_from_string(str2).unwrap();
 
-        let h3 = c.from_string(str3).unwrap();
+        let h3 = c.polymer_from_string(str3).unwrap();
         h1.concat(&mut h2);
 
         assert_eq!(h1, h3)
@@ -282,8 +282,8 @@ mod tests {
         let str1 = String::from("aucg");
         let str2 = String::from("cgau");
 
-        let h1 = c.from_string(str1).unwrap();
-        let h2 = c.from_string(str2).unwrap();
+        let h1 = c.polymer_from_string(str1).unwrap();
+        let h2 = c.polymer_from_string(str2).unwrap();
 
         let i1 = c.inverse_p(&h1);
         let i2 = c.inverse_p(&i1);
@@ -299,8 +299,8 @@ mod tests {
         let str1 = String::from("aucg");
         let str2 = String::from("auaua");
 
-        let h1 = c.from_string(str1).unwrap();
-        let h2 = c.from_string(str2).unwrap();
+        let h1 = c.polymer_from_string(str1).unwrap();
+        let h2 = c.polymer_from_string(str2).unwrap();
 
         let (maybe_2, maybe_4) = h1.gc_content();
         let (maybe_0, maybe_5) = h2.gc_content();

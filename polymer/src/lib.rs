@@ -14,7 +14,7 @@ where
         let mut ok = true;
 
         for c in s.chars() {
-            match T::from_char(c) {
+            match T::from_string(c.to_string()) {
                 Some(y) => x.push(y),
                 None => {
                     ok = false;

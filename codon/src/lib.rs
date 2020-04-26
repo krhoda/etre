@@ -3,24 +3,29 @@ use rna::{RNA, RNACell};
 use amino::Amino;
 use polymer::Strand;
 
+type RNACodon = (RNACell, RNACell, RNACell);
+
 #[derive(Debug, PartialEq)]
 pub struct Codon {
-    pub rna: (RNACell, RNACell, RNACell),
+    pub amino: Amino,
+    pub rna: RNACodon,
 }
 
 // NOTE: could be a more general -- but this is to test quartz.
 impl Codon {
-    pub fn from_strand(s: Strand<RNACell>) -> Option<Codon> {
+    pub fn from_strand(s: &Strand<RNACell>) -> Option<Codon> {
         let mut x = None;
+        let y = Self::tuple_from_strand(&s);
         if s.contents.len() == 3 {
             x = Some(Codon {
-                rna: Self::tuple_from_strand(s),
+                amino: Self::to_amino_encoding(&y),
+                rna: y,
             });
         }
         x
     }
 
-    fn tuple_from_strand(s: Strand<RNACell>) -> (RNACell, RNACell, RNACell) {
+    fn tuple_from_strand(s: &Strand<RNACell>) -> (RNACell, RNACell, RNACell) {
         (
             s.contents[0].clone(),
             s.contents[1].clone(),
@@ -29,9 +34,9 @@ impl Codon {
     }
 
     // NOTE: Ignoring the AUG => START command. Will use seperate function for this.
-    pub fn to_amino_encoding(&self) -> Amino {
+    pub fn to_amino_encoding(r: &RNACodon) -> Amino {
         //
-        let (fst, snd, thd) = &self.rna;
+        let (fst, snd, thd) = r;
 
         let x = fst.read();
         let y = snd.read();
@@ -140,12 +145,12 @@ mod tests {
     #[test]
     fn codon_from_strand() {
         let cat = RNACat::new();
-        let strand = cat.from_string(String::from("aug")).unwrap();
-        let codon = Codon::from_strand(strand).unwrap();
+        let strand = cat.polymer_from_string(String::from("aug")).unwrap();
+        let codon = Codon::from_strand(&strand).unwrap();
         let test = (
-            cat.from_char("a".chars().next().unwrap()).unwrap(),
-            cat.from_char("u".chars().next().unwrap()).unwrap(),
-            cat.from_char("g".chars().next().unwrap()).unwrap(),
+            cat.monomer_from_string(String::from("a")).unwrap(),
+            cat.monomer_from_string(String::from("u")).unwrap(),
+            cat.monomer_from_string(String::from("g")).unwrap(),
         );
         assert_eq!(codon.rna, test);
     }
@@ -155,11 +160,12 @@ mod tests {
         // TODO: MORE RIGOROUS ACC. TESTS.
 
         let cat = RNACat::new();
-        let strand = cat.from_string(String::from("aug")).unwrap();
-        let codon = Codon::from_strand(strand).unwrap();
+        let strand = cat.polymer_from_string(String::from("aug")).unwrap();
+        let codon = Codon::from_strand(&strand).unwrap();
 
         let amino = Amino::Met;
 
-        assert_eq!(amino, codon.to_amino_encoding())
+        assert_eq!(amino, codon.amino);
+        assert_eq!((strand.contents[0].clone(), strand.contents[1].clone(), strand.contents[2].clone()), codon.rna);
     }
 }

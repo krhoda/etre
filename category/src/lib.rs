@@ -7,8 +7,8 @@ where
     U: Polymer<T>,
 {
     fn new() -> Self;
-    fn from_char(&self, c: char) -> Option<T>;
-    fn from_string(&self, s: String) -> Option<U>;
+    fn monomer_from_string(&self, c: String) -> Option<T>;
+    fn polymer_from_string(&self, s: String) -> Option<U>;
 }
 
 pub trait ICat<T, U>: Cat<T, U>

@@ -25,8 +25,8 @@ impl<T: Mono> Clone for Monomer<T> {
 }
 
 impl<T: Mono> Mono for Monomer<T> {
-    fn from_char(c: char) -> Option<Self> {
-        let x = T::from_char(c);
+    fn from_string(c: String) -> Option<Self> {
+        let x = T::from_string(c);
         match x {
             Some(y) => Some(Monomer(create(y))),
             None => None,
@@ -56,8 +56,8 @@ impl<T: IMono> Clone for IMonomer<T> {
 }
 
 impl<T: IMono> Mono for IMonomer<T> {
-    fn from_char(c: char) -> Option<Self> {
-        let x = T::from_char(c);
+    fn from_string(s: String) -> Option<Self> {
+        let x = T::from_string(s);
         match x {
             Some(y) => Some(IMonomer(create(y))),
             None => None,

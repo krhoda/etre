@@ -1,5 +1,5 @@
 pub trait Mono: std::marker::Sized + PartialEq + Clone {
-    fn from_char(c: char) -> Option<Self>;
+    fn from_string(c: String) -> Option<Self>;
 }
 
 pub trait IMono: Mono {
