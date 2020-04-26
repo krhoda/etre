@@ -158,7 +158,6 @@ mod tests {
     #[test]
     fn amino_from_codon() {
         // TODO: MORE RIGOROUS ACC. TESTS.
-
         let cat = RNACat::new();
         let strand = cat.polymer_from_string(String::from("aug")).unwrap();
         let codon = Codon::from_strand(&strand).unwrap();
