@@ -53,10 +53,10 @@ impl IMono for RNA {
 pub type RNACell = IMonomer<RNA>;
 
 pub struct RNACat {
-    a: RNACell,
-    u: RNACell,
-    c: RNACell,
-    g: RNACell,
+    pub a: RNACell,
+    pub u: RNACell,
+    pub c: RNACell,
+    pub g: RNACell,
 }
 
 impl Cat<RNACell, Strand<RNACell>> for RNACat {

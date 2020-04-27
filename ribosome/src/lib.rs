@@ -11,9 +11,11 @@ pub struct Ribosome {
     pub rna_c: RNACat,
 }
 
-pub struct Segment {
-    pub junk: bool,
-    pub strand: Strand<AminoCell>,
+
+#[derive(Debug)]
+pub enum Segment {
+    Protien(Strand<AminoCell>),
+    Junk(Strand<RNACell>),
 }
 
 impl Ribosome {
@@ -44,63 +46,78 @@ impl Ribosome {
     }
 
     pub fn translate(&self, r: Strand<RNACell>) -> Option<Vec<Segment>> {
-        match r.contents.len() % 3 == 0 {
-            false => None,
-            _ => {
-                let mut is_junk = true;
+        let mut is_junk = true;
+        let mut segments = Vec::<Segment>::new();
 
-                let mut rna_contents = r.contents.into_iter().peekable();
-                let mut segments = Vec::<Segment>::new();
-                let mut current_seg = Strand::<AminoCell>::new();
+        let mut current_protien = Strand::<AminoCell>::new();
+        let mut current_rna = Strand::<RNACell>::new();
+        let mut current_codon = Strand::<RNACell>::new();
 
-                while rna_contents.peek().is_some() {
-                    let chunk: Vec<RNACell> = rna_contents.by_ref().take(3).collect();
-                    let codon = (chunk[0].clone(), chunk[1].clone(), chunk[2].clone());
-                    let amino = self.codon_to_amino(&codon);
-                    match (is_junk, amino == self.amino_c.morphisms.met, amino == self.amino_c.morphisms.stop)  {
-                        // In a stopped state, found start
-                        (true, true, _) =>  {
+        for nucl in r.contents {
+            match is_junk {
+                true => {
+                    current_rna.push(nucl.clone());
+                    current_codon.push(nucl.clone());
+
+                    if current_codon.contents.len() == 3 {
+                        let x = self.codon_to_amino(&(
+                            current_codon.contents[0].clone(), 
+                            current_codon.contents[1].clone(), 
+                            current_codon.contents[2].clone()
+                        ));
+
+                        if x == self.amino_c.morphisms.met {
                             is_junk = false;
-                            if current_seg.contents.len() > 0 {
-                                segments.push(
-                                    Segment {
-                                        junk: true,
-                                        strand: current_seg,
-                                    }
-                                );
-                                current_seg = Strand::<AminoCell>::new();
-                            }
-                        }
-                        
-                        // More Junk:
-                        (true, false, _) => {
-                            current_seg.push(amino);
-                        }
+                            current_rna.contents.truncate(current_rna.contents.len() - 3);
 
-                        // Continuing after start 
-                        (false, _, false) => {
-                            current_seg.push(amino);
-                        }
-
-                        // Stopping after start 
-                        (false, _, true) => {
-                            is_junk = true;
-                            if current_seg.contents.len() > 0 {
-                                segments.push(
-                                    Segment {
-                                        junk: false,
-                                        strand: current_seg,
-                                    }
-                                );
-                                current_seg = Strand::<AminoCell>::new();
+                            if current_rna.contents.len() > 0 {
+                                segments.push(Segment::Junk(current_rna));
                             }
+
+                            current_codon = Strand::<RNACell>::new();
+                            current_rna = Strand::<RNACell>::new();
+                        } else {
+                            // TODO: GET FANCIER.
+
+                            let fst = current_codon.contents[1].clone();
+                            let snd = current_codon.contents[2].clone();
+
+                            current_codon = Strand::<RNACell>::new();
+
+                            current_codon.push(fst);
+                            current_codon.push(snd);
                         }
                     }
                 }
 
-                Some(segments)
+                _ => {
+                    current_codon.push(nucl.clone());
+
+                    if current_codon.contents.len() == 3 {
+                        let x = self.codon_to_amino(&(
+                            current_codon.contents[0].clone(), 
+                            current_codon.contents[1].clone(), 
+                            current_codon.contents[2].clone()
+                        ));
+
+                        if x == self.amino_c.morphisms.stop {
+                            if current_protien.contents.len() > 0 {
+                                segments.push(Segment::Protien(current_protien));
+                                current_protien = Strand::<AminoCell>::new();
+                            }
+
+                            is_junk = true;
+                        } else {
+                            current_protien.push(x);
+                        }
+
+                        current_codon = Strand::<RNACell>::new();
+                    }
+                }
             }
         }
+            
+        Some(segments)
     }
 
     pub fn codon_eq(&self, fst: &RNACodon, snd: &RNACodon) -> bool {
@@ -262,28 +279,32 @@ mod tests {
         let strand = ribo.rna_c.polymer_from_string(t_string).unwrap();
         let protien = ribo.translate(strand).unwrap();
 
-        assert_eq!(protien[0].strand.contents.len(), 16);
+        match &protien[0] {
+            Segment::Protien(x) => {
+                assert_eq!(x.contents.len(), 16);
+                let result = vec![
+                    ribo.amino_c.monomer_from_string(String::from("met")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("glu")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("leu")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("phe")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("tyr")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
+                    ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
+                ];
 
-        let result = vec![
-            ribo.amino_c.monomer_from_string(String::from("met")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("glu")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("leu")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("phe")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("tyr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
-        ];
-
-        assert_eq!(protien[0].strand.contents, result);
+                assert_eq!(x.contents, result);
+            }
+            _ => panic!("Expected Protien, got Junk in test_translate!")
+        }
     }
 
     #[test]
@@ -293,21 +314,13 @@ mod tests {
         let ribo = Ribosome::new(ac, rc);
 
         let mut seg_string = String::from("augaugacggaucagccgcaagcggaauuggcguuuacguacgaugcgccguaa");
-        let junk_string = String::from("guagauuaguag");
+        let junk_string = String::from("gccgccgccgcc");
 
         seg_string.push_str(&junk_string);
         seg_string.push_str(&seg_string.clone());
 
         let strand = ribo.rna_c.polymer_from_string(seg_string).unwrap();
         let protien = ribo.translate(strand).unwrap();
-
-        assert_eq!(protien[0].strand.contents.len(), 16);
-        assert_eq!(protien[1].strand.contents.len(), 4);
-        assert_eq!(protien[2].strand.contents.len(), 16);
-
-        assert_eq!(protien[0].junk, false);
-        assert!(protien[1].junk);
-        assert_eq!(protien[2].junk, false);
 
         let result = vec![
             ribo.amino_c.monomer_from_string(String::from("met")).unwrap(),
@@ -328,7 +341,30 @@ mod tests {
             ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
         ];
 
-        assert_eq!(protien[0].strand.contents, result);
-        assert_eq!(protien[2].strand.contents, result);
+        match &protien[0] {
+            Segment::Junk(_) => panic!("Expected Protien, got Junk in Segment 0 in Junk Test"),
+            Segment::Protien(x) => {
+                assert_eq!(x.contents.len(), 16);
+                assert_eq!(x.contents, result);
+            }
+        }
+
+
+        match &protien[1] {
+            Segment::Protien(_) => panic!("Expected Junk, got Protien in Segment 1 in Junk Test"),
+            Segment::Junk(x) => {
+                println!("{:?}", x.contents);
+                assert_eq!(x.contents.len(), 12);
+            }
+        }
+
+        match &protien[2] {
+            Segment::Junk(_) => panic!("Expected Protien, got Junk in Segment 2 in Junk Test"),
+            Segment::Protien(x) => {
+                assert_eq!(x.contents.len(), 16);
+                assert_eq!(x.contents, result);
+            }
+        }
+
     }
 }
