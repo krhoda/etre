@@ -64,29 +64,29 @@ impl Mono for Amino {
 
 pub type AminoCell = Monomer<Amino>;
 
-struct AminoMorphisms {
-    start: AminoCell,
-    stop: AminoCell,
-    ala: AminoCell,
-    arg: AminoCell,
-    asn: AminoCell,
-    asp: AminoCell,
-    cys: AminoCell,
-    gln: AminoCell,
-    glu: AminoCell,
-    gly: AminoCell,
-    his: AminoCell,
-    ile: AminoCell,
-    leu: AminoCell,
-    lys: AminoCell,
-    met: AminoCell,
-    phe: AminoCell,
-    pro: AminoCell,
-    ser: AminoCell,
-    thr: AminoCell,
-    trp: AminoCell,
-    tyr: AminoCell,
-    val: AminoCell,
+pub struct AminoMorphisms {
+    pub start: AminoCell,
+    pub stop: AminoCell,
+    pub ala: AminoCell,
+    pub arg: AminoCell,
+    pub asn: AminoCell,
+    pub asp: AminoCell,
+    pub cys: AminoCell,
+    pub gln: AminoCell,
+    pub glu: AminoCell,
+    pub gly: AminoCell,
+    pub his: AminoCell,
+    pub ile: AminoCell,
+    pub leu: AminoCell,
+    pub lys: AminoCell,
+    pub met: AminoCell,
+    pub phe: AminoCell,
+    pub pro: AminoCell,
+    pub ser: AminoCell,
+    pub thr: AminoCell,
+    pub trp: AminoCell,
+    pub tyr: AminoCell,
+    pub val: AminoCell,
 }
 
 impl AminoMorphisms {
@@ -119,7 +119,7 @@ impl AminoMorphisms {
 }
 
 pub struct AminoCat {
-    morphisms: AminoMorphisms,
+    pub morphisms: AminoMorphisms,
 }
 
 impl Cat<AminoCell, Strand<AminoCell>> for AminoCat {
