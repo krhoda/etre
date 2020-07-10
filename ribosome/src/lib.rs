@@ -1,8 +1,8 @@
 #[macro_use]
-use amino::{AminoCat, AminoCell};
+use amino::{AminoCat, AminoCell, Amino};
 use category::Cat;
-use rna::{RNA, RNACat, RNACell};
 use polymer::{Polymer, Strand};
+use rna::{RNACat, RNACell, RNA};
 
 type RNACodon = (RNACell, RNACell, RNACell);
 
@@ -10,7 +10,6 @@ pub struct Ribosome {
     pub amino_c: AminoCat,
     pub rna_c: RNACat,
 }
-
 
 #[derive(Debug)]
 pub enum Segment {
@@ -61,14 +60,16 @@ impl Ribosome {
 
                     if current_codon.contents.len() == 3 {
                         let x = self.codon_to_amino(&(
-                            current_codon.contents[0].clone(), 
-                            current_codon.contents[1].clone(), 
-                            current_codon.contents[2].clone()
+                            current_codon.contents[0].clone(),
+                            current_codon.contents[1].clone(),
+                            current_codon.contents[2].clone(),
                         ));
 
                         if x == self.amino_c.morphisms.met {
                             is_junk = false;
-                            current_rna.contents.truncate(current_rna.contents.len() - 3);
+                            current_rna
+                                .contents
+                                .truncate(current_rna.contents.len() - 3);
 
                             if current_rna.contents.len() > 0 {
                                 segments.push(Segment::Junk(current_rna));
@@ -95,9 +96,9 @@ impl Ribosome {
 
                     if current_codon.contents.len() == 3 {
                         let x = self.codon_to_amino(&(
-                            current_codon.contents[0].clone(), 
-                            current_codon.contents[1].clone(), 
-                            current_codon.contents[2].clone()
+                            current_codon.contents[0].clone(),
+                            current_codon.contents[1].clone(),
+                            current_codon.contents[2].clone(),
                         ));
 
                         if x == self.amino_c.morphisms.stop {
@@ -116,7 +117,6 @@ impl Ribosome {
                 }
             }
         }
-            
         Some(segments)
     }
 
@@ -126,6 +126,81 @@ impl Ribosome {
 
     pub fn amino_codon_eq(&self, a: &AminoCell, c: &RNACodon) -> bool {
         a == &self.codon_to_amino(c)
+    }
+
+    pub fn amino_to_condon_vec(&self, a: &AminoCell) -> Option<Vec<RNACodon>> {
+        let x = a.read();
+        match x.as_ref().unwrap() {
+            &Amino::Ala => Some(vec![
+                (self.rna_c.g.clone(), self.rna_c.c.clone(), self.rna_c.u.clone()),
+                (self.rna_c.g.clone(), self.rna_c.c.clone(), self.rna_c.c.clone()),
+                (self.rna_c.g.clone(), self.rna_c.c.clone(), self.rna_c.a.clone()),
+                (self.rna_c.g.clone(), self.rna_c.c.clone(), self.rna_c.g.clone()),
+            ]),
+            &Amino::Arg => Some(vec![
+                (self.rna_c.c.clone(), self.rna_c.g.clone(), self.rna_c.u.clone()),
+                (self.rna_c.c.clone(), self.rna_c.g.clone(), self.rna_c.c.clone()),
+                (self.rna_c.c.clone(), self.rna_c.g.clone(), self.rna_c.a.clone()),
+                (self.rna_c.c.clone(), self.rna_c.g.clone(), self.rna_c.g.clone()),
+            ]),
+            &Amino::Asn => Some(vec![
+                (self.rna_c.a.clone(), self.rna_c.a.clone(), self.rna_c.u.clone()),
+                (self.rna_c.a.clone(), self.rna_c.a.clone(), self.rna_c.c.clone()),
+            ]),
+            // TODO: WORK FROM HERE:
+            &Amino::Asp => Some(vec![
+                
+            ]),
+            &Amino::Cys => Some(vec![
+                
+            ]),
+            &Amino::Gln => Some(vec![
+                
+            ]),
+            &Amino::Glu => Some(vec![
+                
+            ]),
+            &Amino::Gly => Some(vec![
+                
+            ]),
+            &Amino::His => Some(vec![
+                
+            ]),
+            &Amino::Ile => Some(vec![
+                
+            ]),
+            &Amino::Leu => Some(vec![
+                
+            ]),
+            &Amino::Lys => Some(vec![
+                
+            ]),
+            &Amino::Met => Some(vec![
+                
+            ]),
+            &Amino::Phe => Some(vec![
+                
+            ]),
+            &Amino::Pro => Some(vec![
+                
+            ]),
+            &Amino::Ser => Some(vec![
+                
+            ]),
+            &Amino::Thr => Some(vec![
+                
+            ]),
+            &Amino::Trp => Some(vec![
+                
+            ]),
+            &Amino::Tyr => Some(vec![
+                
+            ]),
+            &Amino::Val => Some(vec![
+                
+            ]),
+            _ => None
+        }
     }
 
     pub fn codon_to_amino(&self, r: &RNACodon) -> AminoCell {
@@ -144,8 +219,12 @@ impl Ribosome {
         match plain_codon {
             // Reference: https://cnx.org/contents/GFy_h8cu@9.87:QEibhJMi@8/The-Genetic-Code
             // Square 1:
-            (&RNA::U, &RNA::U, &RNA::A) | (&RNA::U, &RNA::U, &RNA::G) => self.amino_c.morphisms.leu.clone(),
-            (&RNA::U, &RNA::U, &RNA::U) | (&RNA::U, &RNA::U, &RNA::C) => self.amino_c.morphisms.phe.clone(),
+            (&RNA::U, &RNA::U, &RNA::A) | (&RNA::U, &RNA::U, &RNA::G) => {
+                self.amino_c.morphisms.leu.clone()
+            }
+            (&RNA::U, &RNA::U, &RNA::U) | (&RNA::U, &RNA::U, &RNA::C) => {
+                self.amino_c.morphisms.phe.clone()
+            }
 
             // Square 2:
             (&RNA::U, &RNA::C, &RNA::U)
@@ -154,11 +233,17 @@ impl Ribosome {
             | (&RNA::U, &RNA::C, &RNA::G) => self.amino_c.morphisms.ser.clone(),
 
             // Square 3:
-            (&RNA::U, &RNA::A, &RNA::U) | (&RNA::U, &RNA::A, &RNA::C) => self.amino_c.morphisms.tyr.clone(),
-            (&RNA::U, &RNA::A, &RNA::A) | (&RNA::U, &RNA::A, &RNA::G) => self.amino_c.morphisms.stop.clone(),
+            (&RNA::U, &RNA::A, &RNA::U) | (&RNA::U, &RNA::A, &RNA::C) => {
+                self.amino_c.morphisms.tyr.clone()
+            }
+            (&RNA::U, &RNA::A, &RNA::A) | (&RNA::U, &RNA::A, &RNA::G) => {
+                self.amino_c.morphisms.stop.clone()
+            }
 
             // Square 4:
-            (&RNA::U, &RNA::G, &RNA::U) | (&RNA::U, &RNA::G, &RNA::C) => self.amino_c.morphisms.cys.clone(),
+            (&RNA::U, &RNA::G, &RNA::U) | (&RNA::U, &RNA::G, &RNA::C) => {
+                self.amino_c.morphisms.cys.clone()
+            }
             (&RNA::U, &RNA::G, &RNA::A) => self.amino_c.morphisms.stop.clone(),
             (&RNA::U, &RNA::G, &RNA::G) => self.amino_c.morphisms.trp.clone(),
 
@@ -175,8 +260,12 @@ impl Ribosome {
             | (&RNA::C, &RNA::C, &RNA::G) => self.amino_c.morphisms.pro.clone(),
 
             // Square 7:
-            (&RNA::C, &RNA::A, &RNA::U) | (&RNA::C, &RNA::A, &RNA::C) => self.amino_c.morphisms.his.clone(),
-            (&RNA::C, &RNA::A, &RNA::A) | (&RNA::C, &RNA::A, &RNA::G) => self.amino_c.morphisms.gln.clone(),
+            (&RNA::C, &RNA::A, &RNA::U) | (&RNA::C, &RNA::A, &RNA::C) => {
+                self.amino_c.morphisms.his.clone()
+            }
+            (&RNA::C, &RNA::A, &RNA::A) | (&RNA::C, &RNA::A, &RNA::G) => {
+                self.amino_c.morphisms.gln.clone()
+            }
 
             // Square 8:
             (&RNA::C, &RNA::G, &RNA::U)
@@ -198,12 +287,20 @@ impl Ribosome {
             | (&RNA::A, &RNA::C, &RNA::G) => self.amino_c.morphisms.thr.clone(),
 
             // Square 11:
-            (&RNA::A, &RNA::A, &RNA::U) | (&RNA::A, &RNA::A, &RNA::C) => self.amino_c.morphisms.asn.clone(),
-            (&RNA::A, &RNA::A, &RNA::A) | (&RNA::A, &RNA::A, &RNA::G) => self.amino_c.morphisms.lys.clone(),
+            (&RNA::A, &RNA::A, &RNA::U) | (&RNA::A, &RNA::A, &RNA::C) => {
+                self.amino_c.morphisms.asn.clone()
+            }
+            (&RNA::A, &RNA::A, &RNA::A) | (&RNA::A, &RNA::A, &RNA::G) => {
+                self.amino_c.morphisms.lys.clone()
+            }
 
             // Square 12:
-            (&RNA::A, &RNA::G, &RNA::U) | (&RNA::A, &RNA::G, &RNA::C) => self.amino_c.morphisms.ser.clone(),
-            (&RNA::A, &RNA::G, &RNA::A) | (&RNA::A, &RNA::G, &RNA::G) => self.amino_c.morphisms.arg.clone(),
+            (&RNA::A, &RNA::G, &RNA::U) | (&RNA::A, &RNA::G, &RNA::C) => {
+                self.amino_c.morphisms.ser.clone()
+            }
+            (&RNA::A, &RNA::G, &RNA::A) | (&RNA::A, &RNA::G, &RNA::G) => {
+                self.amino_c.morphisms.arg.clone()
+            }
 
             // Square 13:
             (&RNA::G, &RNA::U, &RNA::U)
@@ -218,8 +315,12 @@ impl Ribosome {
             | (&RNA::G, &RNA::C, &RNA::G) => self.amino_c.morphisms.ala.clone(),
 
             // Square 15:
-            (&RNA::G, &RNA::A, &RNA::U) | (&RNA::G, &RNA::A, &RNA::C) => self.amino_c.morphisms.asp.clone(),
-            (&RNA::G, &RNA::A, &RNA::A) | (&RNA::G, &RNA::A, &RNA::G) => self.amino_c.morphisms.glu.clone(),
+            (&RNA::G, &RNA::A, &RNA::U) | (&RNA::G, &RNA::A, &RNA::C) => {
+                self.amino_c.morphisms.asp.clone()
+            }
+            (&RNA::G, &RNA::A, &RNA::A) | (&RNA::G, &RNA::A, &RNA::G) => {
+                self.amino_c.morphisms.glu.clone()
+            }
 
             // Square 16:
             (&RNA::G, &RNA::G, &RNA::U)
@@ -247,23 +348,57 @@ mod tests {
         assert_eq!(protien.contents.len(), 17);
 
         let result = vec![
-            ribo.amino_c.monomer_from_string(String::from("met")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("glu")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("leu")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("phe")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("tyr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("stop")).unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("met"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("thr"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("asp"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("gln"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("pro"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("gln"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("ala"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("glu"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("leu"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("ala"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("phe"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("thr"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("tyr"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("asp"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("ala"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("pro"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("stop"))
+                .unwrap(),
         ];
 
         assert_eq!(protien.contents, result);
@@ -283,27 +418,59 @@ mod tests {
             Segment::Protien(x) => {
                 assert_eq!(x.contents.len(), 16);
                 let result = vec![
-                    ribo.amino_c.monomer_from_string(String::from("met")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("glu")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("leu")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("phe")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("tyr")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-                    ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("met"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("thr"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("asp"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("gln"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("pro"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("gln"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("ala"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("glu"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("leu"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("ala"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("phe"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("thr"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("tyr"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("asp"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("ala"))
+                        .unwrap(),
+                    ribo.amino_c
+                        .monomer_from_string(String::from("pro"))
+                        .unwrap(),
                 ];
 
                 assert_eq!(x.contents, result);
             }
-            _ => panic!("Expected Protien, got Junk in test_translate!")
+            _ => panic!("Expected Protien, got Junk in test_translate!"),
         }
     }
 
@@ -323,22 +490,54 @@ mod tests {
         let protien = ribo.translate(strand).unwrap();
 
         let result = vec![
-            ribo.amino_c.monomer_from_string(String::from("met")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("gln")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("glu")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("leu")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("phe")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("thr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("tyr")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("asp")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("ala")).unwrap(),
-            ribo.amino_c.monomer_from_string(String::from("pro")).unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("met"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("thr"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("asp"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("gln"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("pro"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("gln"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("ala"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("glu"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("leu"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("ala"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("phe"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("thr"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("tyr"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("asp"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("ala"))
+                .unwrap(),
+            ribo.amino_c
+                .monomer_from_string(String::from("pro"))
+                .unwrap(),
         ];
 
         match &protien[0] {
@@ -348,7 +547,6 @@ mod tests {
                 assert_eq!(x.contents, result);
             }
         }
-
 
         match &protien[1] {
             Segment::Protien(_) => panic!("Expected Junk, got Protien in Segment 1 in Junk Test"),
@@ -365,6 +563,5 @@ mod tests {
                 assert_eq!(x.contents, result);
             }
         }
-
     }
 }
