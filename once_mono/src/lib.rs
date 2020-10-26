@@ -1,5 +1,5 @@
 use monomer::{IMono, Mono, NucleicAcid};
-use once_cell::{OnceCell, OnceVal};
+use quartz::once_cell::{OnceCell, OnceVal};
 
 pub fn create<T>(t: T) -> OnceVal<T>
 where

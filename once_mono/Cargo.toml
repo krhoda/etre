@@ -8,4 +8,4 @@ edition = "2018"
 
 [dependencies]
 monomer = { path = "../monomer" }
-once_cell = { path = "../../quartz/once_cell" }
+quartz = { path = "../../quartz" }
