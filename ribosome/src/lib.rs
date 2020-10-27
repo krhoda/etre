@@ -1,5 +1,4 @@
-#[macro_use]
-use amino::{AminoCat, AminoCell, Amino};
+use amino::{Amino, AminoCat, AminoCell};
 use category::Cat;
 use polymer::{Polymer, Strand};
 use rna::{RNACat, RNACell, RNA};
@@ -13,7 +12,7 @@ pub struct Ribosome {
 
 #[derive(Debug)]
 pub enum Segment {
-    Protien(Strand<AminoCell>),
+    Protein(Strand<AminoCell>),
     Junk(Strand<RNACell>),
 }
 
@@ -103,7 +102,7 @@ impl Ribosome {
 
                         if x == self.amino_c.morphisms.stop {
                             if current_protien.contents.len() > 0 {
-                                segments.push(Segment::Protien(current_protien));
+                                segments.push(Segment::Protein(current_protien));
                                 current_protien = Strand::<AminoCell>::new();
                             }
 
@@ -128,78 +127,422 @@ impl Ribosome {
         a == &self.codon_to_amino(c)
     }
 
+    // NOTE: This is quite inefficient, but first get it working
+    // TODO: get fancy
+    pub fn protein_to_sources(&self, strand: &Strand<AminoCell>) -> Option<Vec<Vec<RNACell>>> {
+        let mut result: Vec<Vec<RNACell>> = Vec::new();
+        let mut first = true;
+
+        for a in strand.contents.iter() {
+            let inner_vec = self.amino_to_condon_vec(a)?;
+
+            if first {
+                first = false;
+                for c in inner_vec.iter() {
+                    let base_vec = vec![c.0.clone(), c.1.clone(), c.2.clone()];
+                    result.push(base_vec);
+                }
+            } else {
+                let mut temp: Vec<Vec<RNACell>> = Vec::new();
+                for base_vec in result.iter() {
+                    for c in inner_vec.iter() {
+                        let mut next_base = base_vec.to_vec();
+
+                        next_base.push(c.0.clone());
+                        next_base.push(c.1.clone());
+                        next_base.push(c.2.clone());
+
+                        temp.push(next_base);
+                    }
+                }
+
+                result = temp;
+            }
+        }
+
+        Some(result)
+    }
+
     pub fn amino_to_condon_vec(&self, a: &AminoCell) -> Option<Vec<RNACodon>> {
         let x = a.read();
-        match x.as_ref().unwrap() {
-            &Amino::Ala => Some(vec![
-                (self.rna_c.g.clone(), self.rna_c.c.clone(), self.rna_c.u.clone()),
-                (self.rna_c.g.clone(), self.rna_c.c.clone(), self.rna_c.c.clone()),
-                (self.rna_c.g.clone(), self.rna_c.c.clone(), self.rna_c.a.clone()),
-                (self.rna_c.g.clone(), self.rna_c.c.clone(), self.rna_c.g.clone()),
-            ]),
-            &Amino::Arg => Some(vec![
-                (self.rna_c.c.clone(), self.rna_c.g.clone(), self.rna_c.u.clone()),
-                (self.rna_c.c.clone(), self.rna_c.g.clone(), self.rna_c.c.clone()),
-                (self.rna_c.c.clone(), self.rna_c.g.clone(), self.rna_c.a.clone()),
-                (self.rna_c.c.clone(), self.rna_c.g.clone(), self.rna_c.g.clone()),
-            ]),
-            &Amino::Asn => Some(vec![
-                (self.rna_c.a.clone(), self.rna_c.a.clone(), self.rna_c.u.clone()),
-                (self.rna_c.a.clone(), self.rna_c.a.clone(), self.rna_c.c.clone()),
-            ]),
-            // TODO: WORK FROM HERE:
-            &Amino::Asp => Some(vec![
-                
-            ]),
-            &Amino::Cys => Some(vec![
-                
-            ]),
-            &Amino::Gln => Some(vec![
-                
-            ]),
-            &Amino::Glu => Some(vec![
-                
-            ]),
-            &Amino::Gly => Some(vec![
-                
-            ]),
-            &Amino::His => Some(vec![
-                
-            ]),
-            &Amino::Ile => Some(vec![
-                
-            ]),
-            &Amino::Leu => Some(vec![
-                
-            ]),
-            &Amino::Lys => Some(vec![
-                
-            ]),
-            &Amino::Met => Some(vec![
-                
-            ]),
-            &Amino::Phe => Some(vec![
-                
-            ]),
-            &Amino::Pro => Some(vec![
-                
-            ]),
-            &Amino::Ser => Some(vec![
-                
-            ]),
-            &Amino::Thr => Some(vec![
-                
-            ]),
-            &Amino::Trp => Some(vec![
-                
-            ]),
-            &Amino::Tyr => Some(vec![
-                
-            ]),
-            &Amino::Val => Some(vec![
-                
-            ]),
-            _ => None
+        match x.as_ref() {
+            None => None,
+            Some(y) => match y {
+                &Amino::Ala => Some(vec![
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::Arg => Some(vec![
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::Asn => Some(vec![
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                ]),
+
+                &Amino::Asp => Some(vec![
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                ]),
+
+                &Amino::Cys => Some(vec![
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                ]),
+
+                &Amino::Gln => Some(vec![
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::Glu => Some(vec![
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::Gly => Some(vec![
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::His => Some(vec![
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                ]),
+
+                &Amino::Ile => Some(vec![
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                ]),
+
+                &Amino::Leu => Some(vec![
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::Lys => Some(vec![
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::Met => Some(vec![(
+                    self.rna_c.a.clone(),
+                    self.rna_c.u.clone(),
+                    self.rna_c.g.clone(),
+                )]),
+
+                &Amino::Phe => Some(vec![
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                ]),
+
+                &Amino::Pro => Some(vec![
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.c.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::Ser => Some(vec![
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                ]),
+
+                &Amino::Thr => Some(vec![
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.a.clone(),
+                        self.rna_c.c.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::Trp => Some(vec![(
+                    self.rna_c.u.clone(),
+                    self.rna_c.g.clone(),
+                    self.rna_c.g.clone(),
+                )]),
+
+                &Amino::Tyr => Some(vec![
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                ]),
+
+                &Amino::Val => Some(vec![
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.u.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.c.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.g.clone(),
+                        self.rna_c.u.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                ]),
+
+                &Amino::START => Some(vec![(
+                    self.rna_c.a.clone(),
+                    self.rna_c.u.clone(),
+                    self.rna_c.g.clone(),
+                )]),
+
+                &Amino::STOP => Some(vec![
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.a.clone(),
+                        self.rna_c.g.clone(),
+                    ),
+                    (
+                        self.rna_c.u.clone(),
+                        self.rna_c.g.clone(),
+                        self.rna_c.a.clone(),
+                    ),
+                ]),
+            },
         }
     }
 
@@ -343,9 +686,9 @@ mod tests {
 
         let t_string = String::from("augacggaucagccgcaagcggaauuggcguuuacguacgaugcgccguaa");
         let strand = ribo.rna_c.polymer_from_string(t_string).unwrap();
-        let protien = ribo.plain_translate(strand).unwrap();
+        let protein = ribo.plain_translate(strand).unwrap();
 
-        assert_eq!(protien.contents.len(), 17);
+        assert_eq!(protein.contents.len(), 17);
 
         let result = vec![
             ribo.amino_c
@@ -401,7 +744,7 @@ mod tests {
                 .unwrap(),
         ];
 
-        assert_eq!(protien.contents, result);
+        assert_eq!(protein.contents, result);
     }
 
     #[test]
@@ -412,10 +755,10 @@ mod tests {
 
         let t_string = String::from("augaugacggaucagccgcaagcggaauuggcguuuacguacgaugcgccguaa");
         let strand = ribo.rna_c.polymer_from_string(t_string).unwrap();
-        let protien = ribo.translate(strand).unwrap();
+        let protein = ribo.translate(strand).unwrap();
 
-        match &protien[0] {
-            Segment::Protien(x) => {
+        match &protein[0] {
+            Segment::Protein(x) => {
                 assert_eq!(x.contents.len(), 16);
                 let result = vec![
                     ribo.amino_c
@@ -470,7 +813,7 @@ mod tests {
 
                 assert_eq!(x.contents, result);
             }
-            _ => panic!("Expected Protien, got Junk in test_translate!"),
+            _ => panic!("Expected protein, got Junk in test_translate!"),
         }
     }
 
@@ -487,7 +830,7 @@ mod tests {
         seg_string.push_str(&seg_string.clone());
 
         let strand = ribo.rna_c.polymer_from_string(seg_string).unwrap();
-        let protien = ribo.translate(strand).unwrap();
+        let protein = ribo.translate(strand).unwrap();
 
         let result = vec![
             ribo.amino_c
@@ -540,27 +883,159 @@ mod tests {
                 .unwrap(),
         ];
 
-        match &protien[0] {
-            Segment::Junk(_) => panic!("Expected Protien, got Junk in Segment 0 in Junk Test"),
-            Segment::Protien(x) => {
+        match &protein[0] {
+            Segment::Junk(_) => panic!("Expected protein, got Junk in Segment 0 in Junk Test"),
+            Segment::Protein(x) => {
                 assert_eq!(x.contents.len(), 16);
                 assert_eq!(x.contents, result);
             }
         }
 
-        match &protien[1] {
-            Segment::Protien(_) => panic!("Expected Junk, got Protien in Segment 1 in Junk Test"),
+        match &protein[1] {
+            Segment::Protein(_) => panic!("Expected Junk, got Protein in Segment 1 in Junk Test"),
             Segment::Junk(x) => {
                 println!("{:?}", x.contents);
                 assert_eq!(x.contents.len(), 12);
             }
         }
 
-        match &protien[2] {
-            Segment::Junk(_) => panic!("Expected Protien, got Junk in Segment 2 in Junk Test"),
-            Segment::Protien(x) => {
+        match &protein[2] {
+            Segment::Junk(_) => panic!("Expected Protein, got Junk in Segment 2 in Junk Test"),
+            Segment::Protein(x) => {
                 assert_eq!(x.contents.len(), 16);
                 assert_eq!(x.contents, result);
+            }
+        }
+    }
+
+    #[test]
+    fn amino_to_codon() {
+        let ribo = Ribosome::new(AminoCat::new(), RNACat::new());
+
+        // NOTE: Skips "START"
+        let test_vec = vec![
+            "STOP", "ALA", "ARG", "ASN", "ASP", "CYS", "GLN", "GLU", "GLY", "HIS", "ILE", "LEU",
+            "LYS", "MET", "PHE", "PRO", "SER", "THR", "TRP", "TYR", "VAL",
+        ];
+
+        for s in test_vec.iter() {
+            let fst_amino = ribo.amino_c.monomer_from_string(s.to_string()).unwrap();
+            let inner_vec = ribo.amino_to_condon_vec(&fst_amino).unwrap();
+            for r in inner_vec.iter() {
+                assert_eq!(&fst_amino, &ribo.codon_to_amino(r));
+            }
+        }
+    }
+
+    #[test]
+    fn protein_to_sources() {
+        let ribo = Ribosome::new(AminoCat::new(), RNACat::new());
+
+        let strand: Strand<AminoCell> = Strand {
+            contents: vec![
+                ribo.amino_c.monomer_from_string("arg".to_string()).unwrap(),
+                ribo.amino_c.monomer_from_string("gln".to_string()).unwrap(),
+            ],
+        };
+
+        let result: Vec<Vec<RNACell>> = vec![
+            // Base 1
+            vec![
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.u.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.a.clone(),
+            ],
+            vec![
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.u.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.g.clone(),
+            ],
+            // Base 2
+            vec![
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.a.clone(),
+            ],
+            vec![
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.g.clone(),
+            ],
+            // Base 3
+            vec![
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.a.clone(),
+            ],
+            vec![
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.g.clone(),
+            ],
+            // Base 4
+            vec![
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.a.clone(),
+            ],
+            vec![
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.g.clone(),
+                ribo.rna_c.c.clone(),
+                ribo.rna_c.a.clone(),
+                ribo.rna_c.g.clone(),
+            ],
+        ];
+
+        let all_vecs = ribo.protein_to_sources(&strand).unwrap();
+
+        assert_eq!(result, all_vecs);
+
+        // Deadly string.
+        // let seg_string = String::from("aug aug acg gau cag ccg caa gcg gaa uug gcg uuu acg uac gau gcg ccg uaa".replace(" ", ""));
+        // Non-deadly string.
+        let seg_string = String::from("aug aug acg gau cag ccg caa gcg gaa uug gcg uuu acg uac gau gcg uaa".replace(" ", ""));
+        let strand = ribo.rna_c.polymer_from_string(seg_string).unwrap();
+
+        let protein = ribo.translate(strand).unwrap();
+
+        match &protein[0] {
+            Segment::Junk(_) => panic!("Got Junk in protein to sources translate"),
+            Segment::Protein(x) => {
+                let next_vecs = ribo.protein_to_sources(&x).unwrap();
+                let mut result = 1;
+
+                for i in 0..x.contents.len() {
+                    let next = ribo.amino_to_condon_vec(&x.contents[i]).unwrap().len();
+                    result = result * next;
+                }
+
+                assert_eq!(
+                    result,
+                    next_vecs.len(),
+                )
             }
         }
     }

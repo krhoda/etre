@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 
+rna = { path = "../rna" }
 monomer = { path = "../monomer" }
 polymer = { path = "../polymer" }
 category = { path = "../category" }

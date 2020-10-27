@@ -1,18 +1,32 @@
-#[macro_use]
 use rna::{RNA, RNACell};
 use amino::Amino;
 use polymer::Strand;
 
 type RNACodon = (RNACell, RNACell, RNACell);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct Codon {
     pub amino: Amino,
     pub rna: RNACodon,
 }
 
+impl PartialEq for Codon {
+    fn eq(&self, other: &Self) -> bool {
+        self.amino == other.amino
+    }
+}
+
 // NOTE: could be a more general -- but this is to test quartz.
 impl Codon {
+    // deep_equal compares the underlying RNA strand as well.
+    pub fn deep_equal(&self, other: &Self) -> bool {
+        if self == other {
+            self.rna == other.rna 
+        } else {
+            false
+        }
+    }
+
     pub fn from_strand(s: &Strand<RNACell>) -> Option<Codon> {
         let mut x = None;
         let y = Self::tuple_from_strand(&s);
@@ -166,5 +180,6 @@ mod tests {
 
         assert_eq!(amino, codon.amino);
         assert_eq!((strand.contents[0].clone(), strand.contents[1].clone(), strand.contents[2].clone()), codon.rna);
+
     }
 }

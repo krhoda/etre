@@ -1,9 +1,11 @@
-use monomer::{Mono};
-use once_mono::{Monomer};
-use category::{Cat};
+use category::Cat;
+use monomer::Mono;
+use once_mono::Monomer;
 use polymer::{Polymer, Strand};
+use rna::{RNACat, RNACell};
 
-// TODO MAKE MONOMER BY CHANGING FROM CHAR TO FROM STR
+type RNACodon = (RNACell, RNACell, RNACell);
+
 #[derive(PartialEq, Debug, Clone)]
 pub enum Amino {
     START,
@@ -155,7 +157,7 @@ impl Cat<AminoCell, Strand<AminoCell>> for AminoCat {
                 Amino::Trp => Some(self.morphisms.trp.clone()),
                 Amino::Tyr => Some(self.morphisms.tyr.clone()),
                 Amino::Val => Some(self.morphisms.val.clone()),
-            }
+            },
         }
     }
 
